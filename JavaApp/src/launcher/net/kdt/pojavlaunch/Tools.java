@@ -253,13 +253,9 @@ public final class Tools {
     }
 
     public static void preProcessLibraries(DependentLibrary[] libraries) {
-        // Ignore some libraries since they are unsupported (jinput, text2speech) or unused (LWJGL)
-        // Support for text2speech is not planned, so skip it for now.
         for (int i = 0; i < libraries.length; i++) {
             DependentLibrary libItem = libraries[i];
-            if (libItem.name.startsWith("com.mojang:text2speech") ||
-                //libItem.name.startsWith("net.java.jinput") ||
-                libItem.name.startsWith("net.java.dev.jna:platform:") ||
+            if (libItem.name.startsWith("net.java.dev.jna:platform:") ||
                 libItem.name.startsWith("org.lwjgl") ||
                 libItem.name.startsWith("tv.twitch")) {
                     libItem._skip = true;
