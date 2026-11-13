@@ -320,30 +320,36 @@ createLibraryInfo(libItem);
                              "releaseTime", "time", "type"
                              );
 
-                // Go through the libraries, remove the ones overridden by the custom version
-                List<DependentLibrary> inheritLibraryList = new ArrayList<>(Arrays.asList(inheritsVer.libraries));
-                outer_loop:
-                for(DependentLibrary library : customVer.libraries){
-                    // Clean libraries overridden by the custom version
-                    String libName = library.name.substring(0, library.name.lastIndexOf(":"));
-
-                    for(DependentLibrary inheritLibrary : inheritLibraryList) {
-                        String inheritLibName = inheritLibrary.name.substring(0, inheritLibrary.name.lastIndexOf(":"));
-
-                        if(libName.equals(inheritLibName)){
-                            System.out.println("Library " + libName + ": Replaced version " +
-                                    libName.substring(libName.lastIndexOf(":") + 1) + " with " +
-                                    inheritLibName.substring(inheritLibName.lastIndexOf(":") + 1));
-
-                            // Remove the library , superseded by the overriding libs
-                            inheritLibraryList.remove(inheritLibrary);
-                            continue outer_loop;
-                        }
-                    }
+                List<DependentLibrary> inheritLibraryList = new ArrayList<>();
+                if (inheritsVer.libraries != null) {
+                    inheritLibraryList.addAll(Arrays.asList(inheritsVer.libraries));
                 }
 
-                // Fuse libraries
-                inheritLibraryList.addAll(Arrays.asList(customVer.libraries));
+                if (customVer.libraries != null) {
+                    for (DependentLibrary library : customVer.libraries) {
+                        if (library == null || library.name == null) continue;
+
+                        int separator = library.name.lastIndexOf(":");
+                        if (separator <= 0) {
+                            inheritLibraryList.add(library);
+                            continue;
+                        }
+
+                        String libraryKey = library.name.substring(0, separator);
+                        for (int i = inheritLibraryList.size() - 1; i >= 0; i--) {
+                            DependentLibrary inheritedLibrary = inheritLibraryList.get(i);
+                            if (inheritedLibrary != null && inheritedLibrary.name != null) {
+                                int inheritedSeparator = inheritedLibrary.name.lastIndexOf(":");
+                                if (inheritedSeparator > 0 &&
+                                    libraryKey.equals(inheritedLibrary.name.substring(0, inheritedSeparator))) {
+                                    inheritLibraryList.remove(i);
+                                }
+                            }
+                        }
+
+                        inheritLibraryList.add(library);
+                    }
+                }
                 inheritsVer.libraries = inheritLibraryList.toArray(new DependentLibrary[0]);
                 preProcessLibraries(inheritsVer.libraries);
 
