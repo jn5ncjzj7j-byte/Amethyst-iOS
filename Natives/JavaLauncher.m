@@ -125,6 +125,22 @@ void init_loadCustomJvmFlags(int* argc, const char** argv) {
     }
 }
 
+static BOOL versionIs26_3OrNewer(NSString *versionId) {
+    if (![versionId isKindOfClass:NSString.class]) return NO;
+    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:@"(?<![\\d.])(\\d+)\\.(\\d+)" options:0 error:nil];
+    __block BOOL found = NO;
+    [re enumerateMatchesInString:versionId options:0 range:NSMakeRange(0, versionId.length)
+                      usingBlock:^(NSTextCheckingResult *m, NSMatchingFlags f, BOOL *stop) {
+        int major = [versionId substringWithRange:[m rangeAtIndex:1]].intValue;
+        int minor = [versionId substringWithRange:[m rangeAtIndex:2]].intValue;
+        if (major > 26 || (major == 26 && minor >= 3)) {
+            found = YES;
+            *stop = YES;
+        }
+    }];
+    return found;
+}
+
 static BOOL versionHasVulkanBackend(NSString *versionId) {
     if (![versionId isKindOfClass:NSString.class]) return NO;
     NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:@"(?<![\\d.])(\\d{2})\\.(\\d+)" options:0 error:nil];
@@ -446,8 +462,15 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         margv[++margc] = "-Dsodium.checks.issue2561=false";
     }
     margv[++margc] = [NSString stringWithFormat:@"-javaagent:%@/patchjna_agent.jar=", librariesPath].UTF8String;
-    if(getPrefBool(@"general.cosmetica")) {
+    BOOL disableCosmeticaDns = NO;
+    if ([launchTarget isKindOfClass:NSDictionary.class]) {
+        disableCosmeticaDns = versionIs26_3OrNewer(launchTarget[@"id"]) ||
+                              versionIs26_3OrNewer(launchTarget[@"inheritsFrom"]);
+    }
+    if (getPrefBool(@"general.cosmetica") && !disableCosmeticaDns) {
         margv[++margc] = [NSString stringWithFormat:@"-javaagent:%@/arc_dns_injector.jar=23.95.137.176", librariesPath].UTF8String;
+    } else if (disableCosmeticaDns) {
+        NSLog(@"[Skins] Disabled Cosmetica DNS injection for Minecraft 26.3+ to use Mojang profile textures");
     }
 
     // Workaround random stack guard allocation crashes
