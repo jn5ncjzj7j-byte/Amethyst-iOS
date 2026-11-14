@@ -1,3 +1,13 @@
+## Recent fixes and improvements
+
+The following fixes and improvements have been made in this repository:
+
+- **Minecraft 26.3+ skin profiles:** Updated skin-profile networking so 26.3 and newer versions bypass the Cosmetica DNS injector. Older Minecraft versions keep the existing Cosmetica behavior.
+- **Fabric and mod-loader libraries:** Fixed inherited library replacement and merging so Fabric, Quilt, Forge, and derived profiles retain the required loader dependencies when the Minecraft runtime classpath is assembled.
+- **Minecraft startup audio dependency:** Added Mojang's missing `text2speech` library to the runtime classpath to prevent the related missing-class startup failure.
+- **Modrinth mod installation:** Fixed first-open profile filter initialization and allowed mod downloads to continue when optional installed-version inspection fails.
+- **iPad interface and Thai localization:** Improved iPad interface-idiom detection and updated Thai localization.
+
 # Angel Aura Amethyst (iOS)
 [![Development build](https://github.com/AngelAuraMC/Amethyst-iOS/actions/workflows/development.yml/badge.svg?branch=main)](https://github.com/AngelAuraMC/Amethyst-iOS/actions/workflows/development.yml)
 [![Crowdin](https://badges.crowdin.net/angelauramc/localized.svg)](https://crowdin.com/project/angelauramc)
@@ -73,16 +83,6 @@ Amethyst makes use of **just-in-time compilation**, or JIT, to provide usable sp
 
 (*) AltServer running on the local network is required.
 (#) Only the first time.
-
-## Recent fixes and improvements
-
-The following fixes and improvements have been made in this repository:
-
-- **Minecraft 26.3+ skin profiles:** Updated skin-profile networking so 26.3 and newer versions bypass the Cosmetica DNS injector. Older Minecraft versions keep the existing Cosmetica behavior.
-- **Fabric and mod-loader libraries:** Fixed inherited library replacement and merging so Fabric, Quilt, Forge, and derived profiles retain the required loader dependencies when the Minecraft runtime classpath is assembled.
-- **Minecraft startup audio dependency:** Added Mojang's missing `text2speech` library to the runtime classpath to prevent the related missing-class startup failure.
-- **Modrinth mod installation:** Fixed first-open profile filter initialization and allowed mod downloads to continue when optional installed-version inspection fails.
-- **iPad interface and Thai localization:** Improved iPad interface-idiom detection and updated Thai localization.
 
 ## Known compatibility issues
 
