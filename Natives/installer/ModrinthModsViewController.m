@@ -301,11 +301,9 @@ static NSString *MRCategorySymbol(NSString *category) {
     NSString *gameDir = [profile[@"gameDir"] isKindOfClass:NSString.class] && [profile[@"gameDir"] length] ? profile[@"gameDir"] : @".";
     NSArray *signature = @[root ?: @"", profiles.selectedProfileName ?: @"", gameDir, profile[@"lastVersionId"] ?: @""];
     if ([signature isEqual:self.contextSignature]) return;
-    if (self.contextSignature) {
-        if (self.installation.busy) [self.installation cancel];
-        id latest = getPrefObject(@"internal.latest_version");
-        self.filters = [ModrinthSearchFilters defaultsForProfile:profile instanceRoot:root latestVersions:[latest isKindOfClass:NSDictionary.class] ? latest : @{} contentType:self.project[@"contentType"] ?: @"mod"];
-    }
+    if (self.contextSignature && self.installation.busy) [self.installation cancel];
+    id latest = getPrefObject(@"internal.latest_version");
+    self.filters = [ModrinthSearchFilters defaultsForProfile:profile instanceRoot:root latestVersions:[latest isKindOfClass:NSDictionary.class] ? latest : @{} contentType:self.project[@"contentType"] ?: @"mod"];
     self.contextSignature = signature;
     self.targetProfileName = profiles.selectedProfileName ?: @"";
     self.installation.stateChanged = nil;
