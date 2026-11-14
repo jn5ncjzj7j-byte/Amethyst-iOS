@@ -74,6 +74,16 @@ Amethyst makes use of **just-in-time compilation**, or JIT, to provide usable sp
 (*) AltServer running on the local network is required.
 (#) Only the first time.
 
+## Known compatibility issues
+
+### MobileGlues and Sodium
+
+On some iOS/iPadOS devices, Minecraft may stop updating the displayed frame after entering a world when Sodium is used with the MobileGlues renderer. Game audio may continue even while the picture is frozen.
+
+This issue has been observed across multiple Minecraft versions supported by the current MobileGlues setup. It is still under investigation; it should not be assumed to be a Fabric-only problem or a confirmed fix in any particular Sodium version.
+
+For troubleshooting, compare the same Minecraft version and mod set with Sodium disabled. This helps determine whether the freeze is specific to the Sodium and MobileGlues combination.
+
 ## Contributors
 Amethyst is amazing, and surprisingly stable, and it wouldn't be this way without the commmunity that helped and contribute to the project! Some notable names:
 
