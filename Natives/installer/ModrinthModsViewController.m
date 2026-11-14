@@ -447,7 +447,7 @@ static NSString *MRCategorySymbol(NSString *category) {
         button.titleLabel.adjustsFontForContentSizeCategory = YES;
         [button sizeToFit];
         button.frame = CGRectMake(0, 0, MAX(44, button.frame.size.width), MAX(44, button.frame.size.height));
-        button.enabled = ![version[@"downloadUnavailable"] boolValue] && !self.loading && !self.installation.busy && !self.installation.checking && !self.installation.error && ![ModrinthModInstallation isInstalling] && ![self isCurrentVersion:version];
+        button.enabled = ![version[@"downloadUnavailable"] boolValue] && !self.loading && !self.installation.busy && !self.installation.checking && ![ModrinthModInstallation isInstalling] && ![self isCurrentVersion:version];
         if ([self isCurrentVersion:version]) [button setTitleColor:UIColor.systemGreenColor forState:UIControlStateDisabled];
         button.accessibilityLabel = [NSString stringWithFormat:@"%@ %@", operation, cell.textLabel.text];
         button.accessibilityHint = [NSString stringWithFormat:localize(@"content.download.hint", nil), ContentFolder(self.project[@"contentType"])];
@@ -463,7 +463,7 @@ static NSString *MRCategorySymbol(NSString *category) {
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 1) {
-        if (self.versions.count && !self.installation.error) [self installVersion:self.versions[indexPath.row]];
+        if (self.versions.count) [self installVersion:self.versions[indexPath.row]];
         else if (self.error) [self loadVersions];
     } else if (indexPath.row == 2) {
         NSString *url = self.project[@"websiteUrl"];
