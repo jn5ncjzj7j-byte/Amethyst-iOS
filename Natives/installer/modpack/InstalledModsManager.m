@@ -132,8 +132,7 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         NSString *key = IMID(provider, project);
         if (selected[key] && ![selected[key][@"id"] isEqual:entry[@"version"][@"id"]]) { if (error) *error = IMError(@"mods.installed.conflict", project); return nil; }
         NSDictionary *version = entry[@"version"];
-        if (!version[@"dependencies"]) { ModpackAPI *api = IMAPI(provider); version = [api versionForID:version[@"id"] projectID:project]; if (!version) { if (error) *error = api.lastError ?: IMError(@"mods.installed.unresolved", project); return nil; } }
-        if (![ModrinthSearchFilters versions:@[version] matchingFilters:filters].count) { if (error) *error = IMError(@"mods.installed.unresolved", project); return nil; }
+        if (![ModrinthSearchFilters versions:@[version] matchingFilters:filters].count) continue;
         selected[key] = version; providers[key] = provider;
     }
     for (NSDictionary *request in requested) {
@@ -142,7 +141,18 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         NSString *key = IMID(provider, project); selected[key] = version; explicit[key] = version[@"id"]; providers[key] = provider; disabled[key] = request[@"disabled"] ?: @NO;
     }
     // Revisit dependencies after pinned versions replace a candidate. Detect cycles by version ID.
-    NSMutableSet *visited = [NSMutableSet new]; NSMutableArray *queue = selected.allKeys.mutableCopy;
+    NSMutableSet *visited = [NSMutableSet new];
+    NSMutableArray *queue = [NSMutableArray new];
+    if (requested.count) {
+        for (NSDictionary *request in requested) {
+            NSString *project = IMString(request[@"version"][@"project_id"]);
+            NSString *provider = request[@"provider"] ?: @"modrinth";
+            NSString *key = IMID(provider, project);
+            if (selected[key]) [queue addObject:key];
+        }
+    } else {
+        [queue addObjectsFromArray:selected.allKeys];
+    }
     NSUInteger steps = 0;
     while (queue.count) {
         if (++steps > 512 || selected.count > 128) { if (error) *error = IMError(@"mods.installed.conflict", nil); return nil; }
@@ -151,6 +161,13 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         if ([disabled[key] boolValue]) continue;
         NSString *visit = [key stringByAppendingFormat:@":%@", version[@"id"]];
         if ([visited containsObject:visit]) continue; [visited addObject:visit];
+        if (![version[@"dependencies"] isKindOfClass:NSArray.class]) {
+            ModpackAPI *versionAPI = IMAPI(provider);
+            NSDictionary *resolved = [versionAPI versionForID:version[@"id"] projectID:IMString(version[@"project_id"])];
+            if (!resolved) { if (error) *error = versionAPI.lastError ?: IMError(@"mods.installed.unresolved", IMString(version[@"project_id"])); return nil; }
+            version = resolved;
+            selected[key] = version;
+        }
         for (id dep in [version[@"dependencies"] isKindOfClass:NSArray.class] ? version[@"dependencies"] : @[]) {
             if (![dep isKindOfClass:NSDictionary.class] || ![dep[@"dependency_type"] isEqual:@"required"]) continue;
             NSString *project = IMString(dep[@"project_id"]), *pin = IMString(dep[@"version_id"]);
@@ -171,7 +188,12 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
             }
             if (!candidate || ![candidate[@"project_id"] isEqual:project] || ![ModrinthSearchFilters versions:@[candidate] matchingFilters:filters].count) { if (error) *error = api.lastError ?: IMError(@"mods.installed.unresolved", project); return nil; }
             if (pins[depKey] && ![pins[depKey] isEqual:candidate[@"id"]]) { if (error) *error = IMError(@"mods.installed.conflict", project); return nil; }
-            if (!selected[depKey] || ![selected[depKey][@"id"] isEqual:candidate[@"id"]]) { selected[depKey] = candidate; providers[depKey] = provider; [queue addObject:depKey]; }
+            if (!selected[depKey] || ![selected[depKey][@"id"] isEqual:candidate[@"id"]]) {
+                selected[depKey] = candidate; providers[depKey] = provider; [queue addObject:depKey];
+            } else {
+                NSString *dependencyVisit = [depKey stringByAppendingFormat:@":%@", candidate[@"id"]];
+                if (![visited containsObject:dependencyVisit]) [queue addObject:depKey];
+            }
             // Required dependencies are enabled, including previously disabled files.
             disabled[depKey] = @NO;
         }
