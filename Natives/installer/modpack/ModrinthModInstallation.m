@@ -182,8 +182,7 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
         if (!error && unknown.count && [self.provider isEqual:@"modrinth"]) {
             ModrinthAPI *api = [ModrinthAPI new];
             NSDictionary *resolved = [api versionsForFileHashes:unknown];
-            error = api.lastError;
-            for (NSString *hash in resolved) {
+            for (NSString *hash in resolved ?: @{}) {
                 if ([resolved[hash] isKindOfClass:NSDictionary.class]) identities[hash] = MIIdentity(resolved[hash], nil);
             }
         }
