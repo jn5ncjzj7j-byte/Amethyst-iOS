@@ -16,11 +16,72 @@
 #import "utils.h"
 #import "installer/modpack/CurseForgeAPI.h"
 
-@interface LauncherPreferencesViewController()<UIDocumentPickerDelegate>
+@interface LauncherPreferencesViewController()<UIDocumentPickerDelegate, UIColorPickerViewControllerDelegate>
 @property(nonatomic) NSArray<NSString*> *rendererKeys, *rendererList;
 @end
 
 @implementation LauncherPreferencesViewController
+
+- (UIColor *)colorFromPreferenceValue:(NSString *)value {
+    NSDictionary *namedColors = @{
+        @"white": UIColor.whiteColor,
+        @"black": UIColor.blackColor,
+        @"red": UIColor.systemRedColor,
+        @"blue": UIColor.systemBlueColor,
+        @"green": UIColor.systemGreenColor,
+        @"yellow": UIColor.systemYellowColor,
+        @"orange": UIColor.systemOrangeColor,
+        @"purple": UIColor.systemPurpleColor,
+        @"pink": UIColor.systemPinkColor,
+        @"cyan": UIColor.cyanColor,
+        @"magenta": UIColor.magentaColor
+    };
+    UIColor *named = namedColors[value];
+    if (named) return named;
+    NSString *hex = [value stringByReplacingOccurrencesOfString:@"#" withString:@""];
+    unsigned int rgb = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hex];
+    if (hex.length == 6 && [scanner scanHexInt:&rgb] && scanner.isAtEnd) {
+        return [UIColor colorWithRed:((rgb >> 16) & 0xFF) / 255.0 green:((rgb >> 8) & 0xFF) / 255.0 blue:(rgb & 0xFF) / 255.0 alpha:1.0];
+    }
+    return UIColor.whiteColor;
+}
+
+- (void)chooseMouseCursorColor {
+    UIColorPickerViewController *picker = [UIColorPickerViewController new];
+    picker.delegate = self;
+    picker.supportsAlpha = NO;
+    picker.selectedColor = [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)colorPickerViewControllerDidSelectColor:(UIColorPickerViewController *)viewController {
+    CGFloat red, green, blue, alpha;
+    if (![viewController.selectedColor getRed:&red green:&green blue:&blue alpha:&alpha]) return;
+    NSString *hex = [NSString stringWithFormat:@"#%02X%02X%02X", (int)round(red * 255), (int)round(green * 255), (int)round(blue * 255)];
+    setPrefObject(@"control.mouse_cursor_color", hex);
+    setPrefObject(@"control.mouse_cursor_style", @"custom");
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
+}
+
+- (void)exportLauncherConfiguration {
+    NSDictionary *config = getLauncherConfigForExport();
+    NSError *error = nil;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:config options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+    if (!data) {
+        showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not export launcher configuration.");
+        return;
+    }
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Amethyst-Launcher-Config.json"];
+    if (![data writeToFile:path options:NSDataWritingAtomic error:&error]) {
+        showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not save launcher configuration.");
+        return;
+    }
+    UIActivityViewController *activity = [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:path]] applicationActivities:nil];
+    activity.popoverPresentationController.sourceView = self.view;
+    activity.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
+    [self presentViewController:activity animated:YES completion:nil];
+}
 
 - (void)importMouseCursorImage {
     UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.image"]] asCopy:YES];
@@ -152,6 +213,13 @@
               @"icon": @"sidebar.leading",
               @"type": self.typeSwitch,
               @"enableCondition": whenNotInGame
+            },
+            @{@"key": @"export_launcher_config",
+              @"icon": @"square.and.arrow.up",
+              @"type": self.typeButton,
+              @"suppressDoneAlert": @YES,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self exportLauncherConfiguration]; }
             },
             @{@"key": @"reset_warnings",
               @"icon": @"exclamationmark.triangle",
@@ -399,11 +467,24 @@
                 @"hasDetail": @YES,
                 @"icon": @"paintpalette",
                 @"type": self.typePickField,
-                @"pickKeys": @[@"white", @"black", @"red", @"blue", @"green", @"yellow"],
-                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow"],
+                @"pickKeys": @[@"white", @"black", @"red", @"blue", @"green", @"yellow", @"orange", @"purple", @"pink", @"cyan", @"magenta"],
+                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow", @"Orange", @"Purple", @"Pink", @"Cyan", @"Magenta"],
                 @"action": ^void(NSString *color) {
                     self.setPreference(@"control", @"mouse_cursor_style", @"custom");
                 }
+            },
+            @{@"key": @"mouse_cursor_custom_color",
+                @"icon": @"eyedropper",
+                @"type": self.typeButton,
+                @"suppressDoneAlert": @YES,
+                @"action": ^void(){ [self chooseMouseCursorColor]; }
+            },
+            @{@"key": @"mouse_cursor_hotspot",
+                @"hasDetail": @YES,
+                @"icon": @"scope",
+                @"type": self.typePickField,
+                @"pickKeys": @[@"top_left", @"center", @"bottom_right"],
+                @"pickList": @[@"Top-left", @"Center", @"Bottom-right"]
             },
             @{@"key": @"gyroscope_enable",
                 @"hasDetail": @YES,
