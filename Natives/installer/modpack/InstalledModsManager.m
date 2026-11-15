@@ -132,8 +132,15 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         NSString *key = IMID(provider, project);
         if (selected[key] && ![selected[key][@"id"] isEqual:entry[@"version"][@"id"]]) { if (error) *error = IMError(@"mods.installed.conflict", project); return nil; }
         NSDictionary *version = entry[@"version"];
-        if (!version[@"dependencies"]) { ModpackAPI *api = IMAPI(provider); version = [api versionForID:version[@"id"] projectID:project]; if (!version) { if (error) *error = api.lastError ?: IMError(@"mods.installed.unresolved", project); return nil; } }
-        if (![ModrinthSearchFilters versions:@[version] matchingFilters:filters].count) { if (error) *error = IMError(@"mods.installed.unresolved", project); return nil; }
+        if (![version[@"dependencies"] isKindOfClass:NSArray.class]) {
+            NSDictionary *resolved = [IMAPI(provider) versionForID:version[@"id"] projectID:project];
+            version = resolved ?: [version mutableCopy];
+            if (!resolved) {
+                NSMutableDictionary *localVersion = [version mutableCopy];
+                localVersion[@"dependencies"] = @[];
+                version = localVersion;
+            }
+        }
         selected[key] = version; providers[key] = provider;
     }
     for (NSDictionary *request in requested) {
@@ -142,7 +149,13 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         NSString *key = IMID(provider, project); selected[key] = version; explicit[key] = version[@"id"]; providers[key] = provider; disabled[key] = request[@"disabled"] ?: @NO;
     }
     // Revisit dependencies after pinned versions replace a candidate. Detect cycles by version ID.
-    NSMutableSet *visited = [NSMutableSet new]; NSMutableArray *queue = selected.allKeys.mutableCopy;
+    NSMutableSet *visited = [NSMutableSet new];
+    NSMutableArray *queue = requested.count ? [NSMutableArray new] : selected.allKeys.mutableCopy;
+    if (requested.count) for (NSDictionary *request in requested) {
+        NSString *project = IMString(request[@"version"][@"project_id"]);
+        NSString *key = IMID(request[@"provider"] ?: @"modrinth", project);
+        if (key.length && selected[key] && ![queue containsObject:key]) [queue addObject:key];
+    }
     NSUInteger steps = 0;
     while (queue.count) {
         if (++steps > 512 || selected.count > 128) { if (error) *error = IMError(@"mods.installed.conflict", nil); return nil; }
