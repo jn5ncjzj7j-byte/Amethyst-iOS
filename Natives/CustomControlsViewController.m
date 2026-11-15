@@ -213,10 +213,8 @@
 - (void)showControlPopover:(UIGestureRecognizer *)sender {
     self.currentGesture = sender;
 
-    if (sender.state != UIGestureRecognizerStateBegan &&
-        sender.state != UIGestureRecognizerStateEnded) {
-        return;
-    }
+    if ([sender isKindOfClass:UILongPressGestureRecognizer.class] && sender.state != UIGestureRecognizerStateBegan) return;
+    if ([sender isKindOfClass:UITapGestureRecognizer.class] && sender.state != UIGestureRecognizerStateEnded) return;
 
     if ([sender isKindOfClass:UITapGestureRecognizer.class] && [sender.view isKindOfClass:ControlButton.class]) {
         [self actionMenuBtnEdit];
@@ -522,7 +520,7 @@
     vc.modalPresentationStyle = UIModalPresentationOverFullScreen;
     vc.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
     vc.preferredContentSize = self.view.frame.size;
-    if (![self.currentGesture isKindOfClass:[UILongPressGestureRecognizer class]]) {
+    if ([self.currentGesture.view isKindOfClass:ControlButton.class]) {
         vc.targetButton = (ControlButton *)self.currentGesture.view;
         vc.parentEditor = self;
     }
