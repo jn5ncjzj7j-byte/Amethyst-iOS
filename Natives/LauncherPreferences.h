@@ -13,6 +13,8 @@ void setPrefBool(NSString *key, BOOL value);
 void setPrefFloat(NSString *key, float value);
 void setPrefInt(NSString *key, NSInteger value);
 
+NSDictionary *getLauncherConfigForExport(void);
+
 void resetWarnings();
 
 BOOL getEntitlementValue(NSString *key);
