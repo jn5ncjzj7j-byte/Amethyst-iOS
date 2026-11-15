@@ -370,9 +370,7 @@
     for (NSUInteger i = 0; i < pickList.count; i++) {
         NSString *pickKey = pickKeys[i];
         NSString *pickTitle = pickList[i];
-        UIAlertActionStyle style = [cell.detailTextLabel.text isEqualToString:pickKey] ?
-            UIAlertActionStyleDefault : UIAlertActionStyleDefault;
-        [picker addAction:[UIAlertAction actionWithTitle:pickTitle style:style handler:^(UIAlertAction *action) {
+        [picker addAction:[UIAlertAction actionWithTitle:pickTitle style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             cell.detailTextLabel.text = pickKey;
             self.setPreference(self.prefSections[indexPath.section], item[@"key"], pickKey);
             void(^invokeAction)(NSString *) = item[@"action"];
