@@ -39,12 +39,12 @@ extern NSMutableDictionary *prefDict;
     self.launcherMouseHoverGesture.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:self.launcherMouseHoverGesture];
     self.launcherMouseConnectObserver = [NSNotificationCenter.defaultCenter addObserverForName:GCMouseDidConnectNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-        self.launcherMousePointerView.hidden = NO;
+        self.launcherMousePointerView.hidden = YES;
     }];
     self.launcherMouseDisconnectObserver = [NSNotificationCenter.defaultCenter addObserverForName:GCMouseDidDisconnectNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
         self.launcherMousePointerView.hidden = GCMouse.mice.count == 0;
     }];
-    self.launcherMousePointerView.hidden = GCMouse.mice.count == 0;
+    self.launcherMousePointerView.hidden = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(refreshLauncherMousePointerAppearance) name:@"AmethystMouseCursorAppearanceDidChange" object:nil];
     [self refreshLauncherMousePointerAppearance];
 }
@@ -57,6 +57,11 @@ extern NSMutableDictionary *prefDict;
     }
 }
 
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self.view bringSubviewToFront:self.launcherMousePointerView];
+}
 
 - (void)updateLauncherMousePointer:(UIHoverGestureRecognizer *)gesture {
     if (GCMouse.mice.count == 0) {
@@ -98,7 +103,8 @@ extern NSMutableDictionary *prefDict;
         image = path.length ? [UIImage imageWithContentsOfFile:path] : nil;
     } else if ([shape isEqualToString:@"crosshair"]) {
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
-        CGFloat radius = MIN(4.0, MAX(0.0, [getPrefObject(@"control.mouse_cursor_corner_radius") doubleValue]));
+        id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+        CGFloat radius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
         CGContextRef context = UIGraphicsGetCurrentContext();
         CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
         [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:radius] fill];

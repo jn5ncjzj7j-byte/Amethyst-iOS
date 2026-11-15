@@ -62,7 +62,8 @@
 - (UIImage *)cursorPreviewCrosshairImage {
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
-    CGFloat cornerRadius = MIN(4.0, MAX(0.0, [getPrefObject(@"control.mouse_cursor_corner_radius") doubleValue]));
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat cornerRadius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
     CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
     [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:cornerRadius] fill];
     [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:cornerRadius] fill];
@@ -295,6 +296,9 @@
         }
     };
     
+    if (getPrefObject(@"control.mouse_cursor_corner_radius") == nil) {
+        setPrefObject(@"control.mouse_cursor_corner_radius", @2);
+    }
     self.hasDetail = YES;
     self.prefDetailVisible = self.navigationController == nil;
     
