@@ -253,7 +253,7 @@ static void AmethystRefreshLauncherFont(void) {
 
 - (void)importLauncherFont {
     self.importingLauncherFont = YES;
-    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.font] asCopy:YES];
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.font"]] asCopy:YES];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
     picker.modalPresentationStyle = UIModalPresentationFormSheet;
