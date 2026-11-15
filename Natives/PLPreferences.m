@@ -49,6 +49,11 @@
             @"mouse_scale": @(100),
             @"mouse_speed": @(100),
             @"virtmouse_enable": @NO,
+            @"mouse_cursor_style": @"minecraft",
+            @"mouse_cursor_shape": @"arrow",
+            @"mouse_cursor_color": @"white",
+            @"mouse_cursor_image": @"",
+            @"mouse_cursor_hotspot": @"top_left",
             @"gyroscope_enable": @NO,
             @"gyroscope_invert_x_axis": @NO,
             @"gyroscope_sensitivity": @(100)

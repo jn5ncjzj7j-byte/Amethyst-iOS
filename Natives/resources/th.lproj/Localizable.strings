@@ -433,3 +433,24 @@
 "content.version.beta" = "เบตา";
 "content.version.alpha" = "อัลฟา";
 "content.version.recommended" = "แนะนำ";
+
+"preference.title.mouse_cursor_style" = "รูปแบบเคอร์เซอร์";
+"preference.detail.mouse_cursor_style" = "เลือกระหว่างลูกศรแบบ Minecraft หรือเคอร์เซอร์ที่ปรับแต่งได้";
+"preference.title.mouse_cursor_shape" = "รูปร่างเคอร์เซอร์แบบกำหนดเอง";
+"preference.detail.mouse_cursor_shape" = "เลือกรูปร่างของเคอร์เซอร์แบบกำหนดเอง";
+"preference.title.mouse_cursor_color" = "สีเคอร์เซอร์แบบกำหนดเอง";
+"preference.detail.mouse_cursor_color" = "เลือกสีของเคอร์เซอร์แบบกำหนดเอง";
+
+"preference.title.mouse_cursor_image" = "นำเข้ารูปภาพเคอร์เซอร์";
+"preference.detail.mouse_cursor_image" = "เลือกรูปภาพ PNG, JPG, HEIC หรือ WebP จากแอปไฟล์";
+"preference.title.mouse_cursor_custom_color" = "เลือกสีเคอร์เซอร์เอง";
+"preference.title.mouse_cursor_hotspot" = "ตำแหน่งคลิกของเคอร์เซอร์";
+"preference.detail.mouse_cursor_hotspot" = "เลือกจุดของเคอร์เซอร์ที่จะใช้เป็นตำแหน่งคลิก";
+"preference.title.export_launcher_config" = "ส่งออกการตั้งค่าตัว Launcher";
+
+"preference.title.mouse_cursor_preview" = "ตัวอย่างเคอร์เซอร์";
+"preference.title.import_photo_library" = "คลังรูปภาพ";
+"preference.title.import_files" = "เลือกจากไฟล์";
+"preference.title.import_content" = "นำเข้า";
+
+"preference.title.import_launcher_config" = "นำเข้าข้อมูลสำรอง Launcher";

@@ -496,3 +496,24 @@
 "content.version.beta" = "Beta";
 "content.version.alpha" = "Alpha";
 "content.version.recommended" = "Recommended";
+
+"preference.title.mouse_cursor_style" = "Cursor style";
+"preference.detail.mouse_cursor_style" = "Choose the Minecraft arrow or a customizable pointer."; 
+"preference.title.mouse_cursor_shape" = "Custom cursor shape";
+"preference.detail.mouse_cursor_shape" = "Choose the shape used by the custom pointer."; 
+"preference.title.mouse_cursor_color" = "Custom cursor color";
+"preference.detail.mouse_cursor_color" = "Choose the color used by the custom pointer.";
+
+"preference.title.mouse_cursor_image" = "Import cursor image";
+"preference.detail.mouse_cursor_image" = "Choose a PNG, JPG, HEIC, or WebP image from Files.";
+"preference.title.mouse_cursor_custom_color" = "Choose custom cursor color";
+"preference.title.mouse_cursor_hotspot" = "Cursor click point";
+"preference.detail.mouse_cursor_hotspot" = "Choose which point of the cursor is used for clicking.";
+"preference.title.export_launcher_config" = "Export launcher configuration";
+
+"preference.title.mouse_cursor_preview" = "Cursor Preview";
+"preference.title.import_photo_library" = "Photo Library";
+"preference.title.import_files" = "Browse Files";
+"preference.title.import_content" = "Import";
+
+"preference.title.import_launcher_config" = "Import launcher backup";

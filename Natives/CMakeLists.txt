@@ -216,6 +216,7 @@ target_link_libraries(AngelAuraAmethyst
   "-framework GameController"
   "-framework IOKit"
   "-framework QuartzCore"
+  "-framework PhotosUI"
   "-framework UIKit"
   "-framework UniformTypeIdentifiers"
   "-framework UnzipKit"
