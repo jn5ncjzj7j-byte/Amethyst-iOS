@@ -287,60 +287,6 @@ static NSString *MRCategorySymbol(NSString *category) {
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(profileChanged:) name:PLProfilesDidChangeNotification object:nil];
     [self refreshContext];
 }
-- (void)importLocalFile {
-    NSArray<UTType *> *types = [self.contentType isEqual:@"mod"] ? @[[UTType typeWithFilenameExtension:@"jar"] ?: UTType.data] : @[[UTType typeWithFilenameExtension:@"zip"] ?: UTType.archive];
-    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:YES];
-    picker.allowsMultipleSelection = YES;
-    picker.delegate = self;
-    picker.modalPresentationStyle = UIModalPresentationFormSheet;
-    [self presentViewController:picker animated:YES completion:nil];
-}
-
-- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
-    PLProfiles *profiles = PLProfiles.current;
-    NSString *root = profiles.profilePath.stringByDeletingLastPathComponent ?: @"";
-    NSString *game = [profiles.selectedProfile[@"gameDir"] isKindOfClass:NSString.class] && [profiles.selectedProfile[@"gameDir"] length] ? profiles.selectedProfile[@"gameDir"] : @".";
-    NSString *gameDirectory = [[NSString stringWithFormat:@"%@/%@", root, game] stringByStandardizingPath];
-    NSString *folder = ContentFolder(self.contentType);
-    NSString *destination = [gameDirectory stringByAppendingPathComponent:folder];
-    NSFileManager *fm = NSFileManager.defaultManager;
-    NSError *error = nil;
-    if (![fm createDirectoryAtPath:destination withIntermediateDirectories:YES attributes:nil error:&error]) {
-        [self showImportResult:0 total:urls.count error:error];
-        return;
-    }
-    NSUInteger imported = 0;
-    for (NSURL *url in urls) {
-        NSString *extension = url.pathExtension.lowercaseString;
-        BOOL valid = [self.contentType isEqual:@"mod"] ? [extension isEqual:@"jar"] : [extension isEqual:@"zip"];
-        if (!valid) {
-            error = [NSError errorWithDomain:@"AmethystImport" code:1 userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"Unsupported file type: %@", url.lastPathComponent]}];
-            continue;
-        }
-        NSString *target = [destination stringByAppendingPathComponent:url.lastPathComponent];
-        if ([fm fileExistsAtPath:target]) {
-            NSString *base = url.lastPathComponent.stringByDeletingPathExtension;
-            NSString *suffix = url.pathExtension;
-            NSUInteger index = 2;
-            do {
-                target = [destination stringByAppendingPathComponent:[NSString stringWithFormat:@"%@ (%lu).%@", base, (unsigned long)index++, suffix]];
-            } while ([fm fileExistsAtPath:target]);
-        }
-        NSError *copyError = nil;
-        if ([fm copyItemAtURL:url toURL:[NSURL fileURLWithPath:target] error:&copyError]) imported++;
-        else error = copyError;
-    }
-    [self showImportResult:imported total:urls.count error:error];
-}
-
-- (void)showImportResult:(NSUInteger)imported total:(NSUInteger)total error:(NSError *)error {
-    NSString *title = imported == total ? @"Import complete" : imported ? @"Import partially complete" : @"Import failed";
-    NSString *message = [NSString stringWithFormat:@"%lu/%lu %@", (unsigned long)imported, (unsigned long)total, error.localizedDescription ?: @""];
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:localize(@"OK", nil) style:UIAlertActionStyleDefault handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
-}
-
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self refreshContext];
@@ -561,6 +507,61 @@ static NSString *MRCategorySymbol(NSString *category) {
 }
 - (NSString *)imageName { return @"magnifyingglass"; }
 - (NSString *)contentType { return @"mod"; }
+
+- (void)importLocalFile {
+    NSArray<UTType *> *types = [self.contentType isEqual:@"mod"] ? @[[UTType typeWithFilenameExtension:@"jar"] ?: UTType.data] : @[[UTType typeWithFilenameExtension:@"zip"] ?: UTType.archive];
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:YES];
+    picker.allowsMultipleSelection = YES;
+    picker.delegate = self;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    PLProfiles *profiles = PLProfiles.current;
+    NSString *root = profiles.profilePath.stringByDeletingLastPathComponent ?: @"";
+    NSString *game = [profiles.selectedProfile[@"gameDir"] isKindOfClass:NSString.class] && [profiles.selectedProfile[@"gameDir"] length] ? profiles.selectedProfile[@"gameDir"] : @".";
+    NSString *gameDirectory = [[NSString stringWithFormat:@"%@/%@", root, game] stringByStandardizingPath];
+    NSString *folder = ContentFolder(self.contentType);
+    NSString *destination = [gameDirectory stringByAppendingPathComponent:folder];
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSError *error = nil;
+    if (![fm createDirectoryAtPath:destination withIntermediateDirectories:YES attributes:nil error:&error]) {
+        [self showImportResult:0 total:urls.count error:error];
+        return;
+    }
+    NSUInteger imported = 0;
+    for (NSURL *url in urls) {
+        NSString *extension = url.pathExtension.lowercaseString;
+        BOOL valid = [self.contentType isEqual:@"mod"] ? [extension isEqual:@"jar"] : [extension isEqual:@"zip"];
+        if (!valid) {
+            error = [NSError errorWithDomain:@"AmethystImport" code:1 userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"Unsupported file type: %@", url.lastPathComponent]}];
+            continue;
+        }
+        NSString *target = [destination stringByAppendingPathComponent:url.lastPathComponent];
+        if ([fm fileExistsAtPath:target]) {
+            NSString *base = url.lastPathComponent.stringByDeletingPathExtension;
+            NSString *suffix = url.pathExtension;
+            NSUInteger index = 2;
+            do {
+                target = [destination stringByAppendingPathComponent:[NSString stringWithFormat:@"%@ (%lu).%@", base, (unsigned long)index++, suffix]];
+            } while ([fm fileExistsAtPath:target]);
+        }
+        NSError *copyError = nil;
+        if ([fm copyItemAtURL:url toURL:[NSURL fileURLWithPath:target] error:&copyError]) imported++;
+        else error = copyError;
+    }
+    [self showImportResult:imported total:urls.count error:error];
+}
+
+- (void)showImportResult:(NSUInteger)imported total:(NSUInteger)total error:(NSError *)error {
+    NSString *title = imported == total ? @"Import complete" : imported ? @"Import partially complete" : @"Import failed";
+    NSString *message = [NSString stringWithFormat:@"%lu/%lu %@", (unsigned long)imported, (unsigned long)total, error.localizedDescription ?: @""];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:localize(@"OK", nil) style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
