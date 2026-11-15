@@ -352,36 +352,45 @@
 - (void)tableView:(UITableView *)tableView openPickerAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     NSDictionary *item = self.prefContents[indexPath.section][indexPath.row];
+    NSArray *pickKeys = item[@"pickKeys"];
+    NSArray *pickList = item[@"pickList"];
+
+    if (!cell || pickKeys.count == 0 || pickKeys.count != pickList.count) {
+        return;
+    }
 
     NSString *message = nil;
     if ([item[@"hasDetail"] boolValue]) {
         message = localize(([NSString stringWithFormat:@"preference.detail.%@", item[@"key"]]), nil);
     }
 
-    NSArray *pickKeys = item[@"pickKeys"];
-    NSArray *pickList = item[@"pickList"];
-    NSMutableArray<UIAction *> *menuItems = [[NSMutableArray alloc] init];
-    for (int i = 0; i < pickList.count; i++) {
-        [menuItems addObject:[UIAction
-            actionWithTitle:pickList[i]
-            image:nil identifier:nil
-            handler:^(UIAction *action) {
-                cell.detailTextLabel.text = pickKeys[i];
-                self.setPreference(self.prefSections[indexPath.section], item[@"key"], pickKeys[i]);
-                void(^invokeAction)(NSString *) = item[@"action"];
-                if (invokeAction) {
-                    invokeAction(pickKeys[i]);
-                }
-            }]];
-        if ([cell.detailTextLabel.text isEqualToString:pickKeys[i]]) {
-            menuItems.lastObject.state = UIMenuElementStateOn;
-        }
+    UIAlertController *picker = [UIAlertController alertControllerWithTitle:cell.textLabel.text
+                                                                     message:message
+                                                              preferredStyle:UIAlertControllerStyleActionSheet];
+    for (NSUInteger i = 0; i < pickList.count; i++) {
+        NSString *pickKey = pickKeys[i];
+        NSString *pickTitle = pickList[i];
+        UIAlertActionStyle style = [cell.detailTextLabel.text isEqualToString:pickKey] ?
+            UIAlertActionStyleDefault : UIAlertActionStyleDefault;
+        [picker addAction:[UIAlertAction actionWithTitle:pickTitle style:style handler:^(UIAlertAction *action) {
+            cell.detailTextLabel.text = pickKey;
+            self.setPreference(self.prefSections[indexPath.section], item[@"key"], pickKey);
+            void(^invokeAction)(NSString *) = item[@"action"];
+            if (invokeAction) {
+                invokeAction(pickKey);
+            }
+        }]];
     }
+    [picker addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil)
+                                               style:UIAlertActionStyleCancel
+                                             handler:nil]];
 
-    self.currentMenu = [UIMenu menuWithTitle:message children:menuItems];
-    UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:self];
-    cell.detailTextLabel.interactions = @[interaction];
-    [interaction _presentMenuAtLocation:CGPointZero];
+    UIPopoverPresentationController *popover = picker.popoverPresentationController;
+    if (popover) {
+        popover.sourceView = cell;
+        popover.sourceRect = cell.bounds;
+    }
+    [self presentViewController:picker animated:YES completion:nil];
 }
 
 - (void)tableView:(UITableView *)tableView invokeActionWithPromptAtIndexPath:(NSIndexPath *)indexPath {
