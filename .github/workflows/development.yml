@@ -1,6 +1,6 @@
 name: Development build
 
-# Manual development builds package one iOS IPA after source fixes.
+# Manual development builds package one iOS IPA with solid crosshair geometry.
 
 on:
   pull_request:
