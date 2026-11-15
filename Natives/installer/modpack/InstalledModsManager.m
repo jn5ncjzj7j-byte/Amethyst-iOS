@@ -133,13 +133,9 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
         if (selected[key] && ![selected[key][@"id"] isEqual:entry[@"version"][@"id"]]) { if (error) *error = IMError(@"mods.installed.conflict", project); return nil; }
         NSDictionary *version = entry[@"version"];
         if (![version[@"dependencies"] isKindOfClass:NSArray.class]) {
-            NSDictionary *resolved = [IMAPI(provider) versionForID:version[@"id"] projectID:project];
-            version = resolved ?: [version mutableCopy];
-            if (!resolved) {
-                NSMutableDictionary *localVersion = [version mutableCopy];
-                localVersion[@"dependencies"] = @[];
-                version = localVersion;
-            }
+            NSMutableDictionary *localVersion = [version mutableCopy];
+            localVersion[@"dependencies"] = @[];
+            version = localVersion;
         }
         selected[key] = version; providers[key] = provider;
     }
@@ -175,6 +171,7 @@ static BOOL IMValidEntry(NSDictionary *entry, NSString *directory, NSError **err
             if (pin.length) pins[depKey] = pin;
             if (!candidate) {
                 candidate = selected[depKey];
+                if (candidate && ![candidate[@"dependencies"] isKindOfClass:NSArray.class]) candidate = [api versionForID:candidate[@"id"] projectID:project] ?: candidate;
                 if (!candidate) for (NSDictionary *entry in entries) if ([entry[@"provider"] isEqual:provider] && [entry[@"version"][@"project_id"] isEqual:project]) { candidate = [api versionForID:entry[@"version"][@"id"] projectID:project]; break; }
                 if (candidate && ![ModrinthSearchFilters versions:@[candidate] matchingFilters:filters].count) candidate = nil;
                 if (!candidate) {
