@@ -317,7 +317,7 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
     [NSNotificationCenter.defaultCenter postNotificationName:ModrinthModInstallStateDidChangeNotification object:self]; [self changed];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSError *error;
-        NSArray *entries = [InstalledModsManager entriesInDirectory:self.modsDirectory identify:YES error:&error];
+        NSArray *entries = [InstalledModsManager entriesInDirectory:self.modsDirectory identify:NO error:&error];
         BOOL disabled = NO;
         for (NSDictionary *entry in entries) if ([entry[@"version"][@"project_id"] isEqual:self.projectID] && [entry[@"provider"] isEqual:self.provider]) disabled |= ![entry[@"enabled"] boolValue];
         if ([filters[@"enableRequested"] boolValue]) disabled = NO;
