@@ -247,6 +247,7 @@ static GameSurfaceView* pojavWindow;
     self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
     self.mousePointerView.userInteractionEnabled = NO;
     [self.touchView addSubview:self.mousePointerView];
+    [self updateVirtualMouseAppearance];
 
     self.inputTextField = [[TrackedTextField alloc] initWithFrame:CGRectMake(0, -32.0, self.view.frame.size.width, 30.0)];
     self.inputTextField.backgroundColor = UIColor.secondarySystemBackgroundColor;
