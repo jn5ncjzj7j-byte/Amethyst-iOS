@@ -390,14 +390,20 @@
                 @"icon": @"cursorarrow.motionlines",
                 @"type": self.typePickField,
                 @"pickKeys": @[@"arrow", @"crosshair", @"circle", @"hand", @"image"],
-                @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand", @"Imported image"]
+                @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand", @"Imported image"],
+                @"action": ^void(NSString *shape) {
+                    self.setPreference(@"control", @"mouse_cursor_style", @"custom");
+                }
             },
             @{@"key": @"mouse_cursor_color",
                 @"hasDetail": @YES,
                 @"icon": @"paintpalette",
                 @"type": self.typePickField,
                 @"pickKeys": @[@"white", @"black", @"red", @"blue", @"green", @"yellow"],
-                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow"]
+                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow"],
+                @"action": ^void(NSString *color) {
+                    self.setPreference(@"control", @"mouse_cursor_style", @"custom");
+                }
             },
             @{@"key": @"gyroscope_enable",
                 @"hasDetail": @YES,
