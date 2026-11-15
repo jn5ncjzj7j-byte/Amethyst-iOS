@@ -102,16 +102,18 @@ extern NSMutableDictionary *prefDict;
         NSString *path = getPrefObject(@"control.mouse_cursor_image");
         image = path.length ? [UIImage imageWithContentsOfFile:path] : nil;
     } else if ([shape isEqualToString:@"crosshair"]) {
-        UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(18, 18), NO, 1.0);
         id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
         CGFloat radius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
         CGContextRef context = UIGraphicsGetCurrentContext();
-        CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:radius] fill];
-        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:radius] fill];
+        if (radius > 0.0) {
+            CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+            [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(5, 0, 8, 18) cornerRadius:radius] fill];
+            [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 5, 18, 8) cornerRadius:radius] fill];
+        }
         CGContextSetFillColorWithColor(context, tint.CGColor);
-        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 0, 4, 16) cornerRadius:radius] fill];
-        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 6, 16, 4) cornerRadius:radius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(7, 0, 4, 18) cornerRadius:radius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 7, 18, 4) cornerRadius:radius] fill];
         image = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
     } else {

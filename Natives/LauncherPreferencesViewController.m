@@ -138,16 +138,18 @@ static void AmethystRefreshLauncherFont(void) {
 }
 
 - (UIImage *)cursorPreviewCrosshairImage {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(18, 18), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
     CGFloat cornerRadius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
-    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:cornerRadius] fill];
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:cornerRadius] fill];
+    if (cornerRadius > 0.0) {
+        CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(5, 0, 8, 18) cornerRadius:cornerRadius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 5, 18, 8) cornerRadius:cornerRadius] fill];
+    }
     CGContextSetFillColorWithColor(context, [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")].CGColor);
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 0, 4, 16) cornerRadius:cornerRadius] fill];
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 6, 16, 4) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(7, 0, 4, 18) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 7, 18, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
@@ -251,7 +253,7 @@ static void AmethystRefreshLauncherFont(void) {
 
 - (void)importLauncherFont {
     self.importingLauncherFont = YES;
-    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.font"]] asCopy:YES];
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.font] asCopy:YES];
     picker.delegate = self;
     picker.allowsMultipleSelection = NO;
     picker.modalPresentationStyle = UIModalPresentationFormSheet;
@@ -364,12 +366,17 @@ static void AmethystRefreshLauncherFont(void) {
             showDialog(localize(@"Error", nil), @"Choose a TTF, OTF, or TTC font file.");
             return;
         }
+        __block NSError *readError = nil;
+        __block NSData *fontData = nil;
         BOOL accessing = [source startAccessingSecurityScopedResource];
-        NSData *fontData = [NSData dataWithContentsOfURL:source];
+        NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+        [coordinator coordinateReadingItemAtURL:source options:0 error:&readError byAccessor:^(NSURL *readURL) {
+            fontData = [NSData dataWithContentsOfURL:readURL options:NSDataReadingMappedIfSafe error:&readError];
+        }];
         if (accessing) [source stopAccessingSecurityScopedResource];
         const char *home = getenv("AME_HOME");
         if (!fontData.length || !home) {
-            showDialog(localize(@"Error", nil), @"Could not read the selected font file.");
+            showDialog(localize(@"Error", nil), readError.localizedDescription ?: @"Could not read the selected font file.");
             return;
         }
         NSString *filename = [NSString stringWithFormat:@"launcher-font-%@.%@", NSUUID.UUID.UUIDString, extension];
@@ -380,27 +387,35 @@ static void AmethystRefreshLauncherFont(void) {
             return;
         }
         NSURL *fontURL = [NSURL fileURLWithPath:destination];
+        CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
+        NSString *fontName = nil;
+        if (descriptors && CFArrayGetCount(descriptors) > 0) {
+            CTFontDescriptorRef descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(descriptors, 0);
+            CTFontRef candidate = CTFontCreateWithFontDescriptor(descriptor, 16.0, NULL);
+            if (candidate) {
+                fontName = [(__bridge_transfer NSString *)CTFontCopyPostScriptName(candidate) copy];
+                CFRelease(candidate);
+            }
+        }
+        if (descriptors) CFRelease(descriptors);
+        if (!fontName.length) {
+            [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
+            showDialog(localize(@"Error", nil), @"iOS could not read a valid font face from this file.");
+            return;
+        }
         CFErrorRef registrationError = NULL;
-        if (!CTFontManagerRegisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, &registrationError)) {
-            NSString *message = registrationError ? [(__bridge NSError *)registrationError localizedDescription] : @"The selected file is not a supported font.";
+        BOOL registered = CTFontManagerRegisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, &registrationError);
+        UIFont *validatedFont = [UIFont fontWithName:fontName size:16];
+        if (!registered && !validatedFont) {
+            NSString *message = registrationError ? [(__bridge NSError *)registrationError localizedDescription] : @"iOS could not activate this font.";
             if (registrationError) CFRelease(registrationError);
             [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
             showDialog(localize(@"Error", nil), message);
             return;
         }
-        CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
-        NSString *fontName = nil;
-        if (descriptors && CFArrayGetCount(descriptors) > 0) {
-            CTFontDescriptorRef descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(descriptors, 0);
-            CFStringRef name = CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute);
-            if (name) {
-                fontName = [(__bridge NSString *)name copy];
-                CFRelease(name);
-            }
-        }
-        if (descriptors) CFRelease(descriptors);
-        if (!fontName.length || ![UIFont fontWithName:fontName size:16]) {
-            showDialog(localize(@"Error", nil), @"The font was imported, but iOS could not activate it.");
+        if (registrationError) CFRelease(registrationError);
+        if (!validatedFont) {
+            showDialog(localize(@"Error", nil), @"The font file was registered, but its PostScript font name could not be activated.");
             return;
         }
         setPrefObject(@"general.launcher_font_name", fontName);

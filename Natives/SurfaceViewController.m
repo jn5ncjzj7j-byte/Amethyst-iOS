@@ -97,16 +97,18 @@ static GameSurfaceView* pojavWindow;
 }
 
 - (UIImage *)minecraftCrosshairImage {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(18, 18), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
     CGFloat cornerRadius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
-    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:cornerRadius] fill];
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:cornerRadius] fill];
+    if (cornerRadius > 0.0) {
+        CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(5, 0, 8, 18) cornerRadius:cornerRadius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 5, 18, 8) cornerRadius:cornerRadius] fill];
+    }
     CGContextSetFillColorWithColor(context, [self virtualMouseTintColor].CGColor);
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 0, 4, 16) cornerRadius:cornerRadius] fill];
-    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 6, 16, 4) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(7, 0, 4, 18) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 7, 18, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
