@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 #import "DBNumberedSlider.h"
 #import "HostManagerBridge.h"
@@ -15,11 +16,48 @@
 #import "utils.h"
 #import "installer/modpack/CurseForgeAPI.h"
 
-@interface LauncherPreferencesViewController()
+@interface LauncherPreferencesViewController()<UIDocumentPickerDelegate>
 @property(nonatomic) NSArray<NSString*> *rendererKeys, *rendererList;
 @end
 
 @implementation LauncherPreferencesViewController
+
+- (void)importMouseCursorImage {
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.image] asCopy:YES];
+    picker.delegate = self;
+    picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSURL *source = urls.firstObject;
+    if (!source) return;
+
+    NSString *extension = source.pathExtension.lowercaseString;
+    NSSet *supportedExtensions = [NSSet setWithArray:@[@"png", @"jpg", @"jpeg", @"heic", @"webp"]];
+    if (![supportedExtensions containsObject:extension]) {
+        showDialog(localize(@"Error", nil), @"Choose a PNG, JPG, JPEG, HEIC, or WebP image.");
+        return;
+    }
+
+    NSString *destination = [NSString stringWithFormat:@"%s/custom_mouse_cursor.%@", getenv("AME_HOME"), extension];
+    NSFileManager *fileManager = NSFileManager.defaultManager;
+    NSError *error = nil;
+    if ([fileManager fileExistsAtPath:destination]) {
+        [fileManager removeItemAtPath:destination error:nil];
+    }
+    if (![fileManager copyItemAtURL:source toURL:[NSURL fileURLWithPath:destination] error:&error]) {
+        showDialog(localize(@"Error", nil), error.localizedDescription);
+        return;
+    }
+
+    setPrefObject(@"control.mouse_cursor_image", destination);
+    setPrefObject(@"control.mouse_cursor_style", @"custom");
+    setPrefObject(@"control.mouse_cursor_shape", @"image");
+    showDialog(@"Cursor image imported", @"Your image will be used as the custom mouse cursor.");
+    [self.tableView reloadData];
+}
 
 - (id)init {
     self = [super init];
@@ -335,13 +373,20 @@
                 @"pickKeys": @[@"minecraft", @"custom"],
                 @"pickList": @[@"Minecraft-style arrow", @"Custom pointer"]
             },
+            @{@"key": @"mouse_cursor_image",
+                @"icon": @"photo",
+                @"type": self.typeButton,
+                @"action": ^void(){
+                    [self importMouseCursorImage];
+                }
+            },
             @{@"key": @"mouse_cursor_shape",
                 @"hasDetail": @YES,
                 @"icon": @"cursorarrow.motionlines",
                 @"type": self.typePickField,
-                @"pickKeys": @[@"arrow", @"crosshair", @"circle", @"hand"],
-                @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand"]
-            },
+                @"pickKeys": @[@"arrow", @"crosshair", @"circle", @"hand", @"image"],
+                @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand", @"Imported image"]
+            },,
             @{@"key": @"mouse_cursor_color",
                 @"hasDetail": @YES,
                 @"icon": @"paintpalette",
