@@ -6,6 +6,8 @@ The following fixes and improvements have been made in this repository:
 - **Fabric and mod-loader libraries:** Fixed inherited library replacement and merging so Fabric, Quilt, Forge, and derived profiles retain the required loader dependencies when the Minecraft runtime classpath is assembled.
 - **Minecraft startup audio dependency:** Added Mojang's missing `text2speech` library to the runtime classpath to prevent the related missing-class startup failure.
 - **Modrinth mod installation:** Fixed first-open profile filter initialization and allowed mod downloads to continue when optional installed-version inspection fails.
+- **Installed mods and update checks:** Avoided unnecessary remote version lookups for unrelated local JAR files and made update checks manual instead of running automatically when opening the installed-mods page.
+- **Local content importing:** Added an import action for local `.jar` mods and `.zip` resource packs and shader packs, targeting the selected profile's content folders. This change is awaiting build and on-device verification.
 - **iPad interface and Thai localization:** Improved iPad interface-idiom detection and updated Thai localization.
 
 # Angel Aura Amethyst (iOS)
