@@ -669,11 +669,11 @@ static GameSurfaceView* pojavWindow;
                 virtualMouseFrame.origin.x += location.x * self.mouseSpeed;
                 virtualMouseFrame.origin.y += location.y * self.mouseSpeed;
             }
-            virtualMouseFrame.origin.x = clamp(virtualMouseFrame.origin.x, 0, self.surfaceView.frame.size.width);
-            virtualMouseFrame.origin.y = clamp(virtualMouseFrame.origin.y, 0, self.surfaceView.frame.size.height);
+            CGPoint hotspot = [self virtualMouseHotspotOffset];
+            virtualMouseFrame.origin.x = clamp(virtualMouseFrame.origin.x, 0, MAX(0, self.surfaceView.frame.size.width - hotspot.x));
+            virtualMouseFrame.origin.y = clamp(virtualMouseFrame.origin.y, 0, MAX(0, self.surfaceView.frame.size.height - hotspot.y));
             lastVirtualMousePoint = location;
             self.mousePointerView.frame = virtualMouseFrame;
-            CGPoint hotspot = [self virtualMouseHotspotOffset];
             CallbackBridge_nativeSendCursorPos(event, (virtualMouseFrame.origin.x + hotspot.x) * screenScale, (virtualMouseFrame.origin.y + hotspot.y) * screenScale);
             return;
         }
