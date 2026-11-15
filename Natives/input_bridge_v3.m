@@ -19,6 +19,8 @@
 #include <os/lock.h>
 #include <stdatomic.h>
 
+#include "jni.h"
+
 static atomic_uint amethystRenderedFrames;
 
 JNIEXPORT void JNICALL Java_org_lwjgl_glfw_CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
@@ -29,7 +31,7 @@ unsigned int amethystTakeRenderedFrames(void) {
     return atomic_exchange_explicit(&amethystRenderedFrames, 0, memory_order_relaxed);
 }
 
-#include "jni.h"
+
 #include "renderer_info.h"
 #include "glfw_keycodes.h"
 #include "ios_uikit_bridge.h"
