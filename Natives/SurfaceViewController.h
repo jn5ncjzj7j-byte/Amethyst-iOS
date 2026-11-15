@@ -25,6 +25,7 @@ CGPoint lastVirtualMousePoint;
 - (void)sendTouchPoint:(CGPoint)location withEvent:(int)event;
 - (void)updateSavedResolution;
 - (void)updateGrabState;
+- (void)sendControlScrollDelta:(CGFloat)delta reverse:(BOOL)reverse;
 
 + (GameSurfaceView *)surface;
 + (BOOL)isRunning;

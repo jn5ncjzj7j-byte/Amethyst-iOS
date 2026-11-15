@@ -49,4 +49,6 @@ public class CallbackBridge {
      * Returns the native iOS rendering view used by Amethyst.
      */
     public static native long nativeGetCocoaView(long window);
+
+    public static native void nativeOnFramePresented();
 }

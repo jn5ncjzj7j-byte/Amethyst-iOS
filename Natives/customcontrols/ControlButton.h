@@ -14,6 +14,7 @@
 @property BOOL canBeHidden, displayInGame, displayInMenu, isToggleOn;
 @property(nonatomic) NSMutableDictionary* properties;
 @property(nonatomic) UIColor* savedBackgroundColor;
+@property(nonatomic) CGFloat lastScrollTouchY;
 
 + (id)buttonWithProperties:(NSMutableDictionary *)propArray;
 

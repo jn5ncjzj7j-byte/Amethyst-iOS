@@ -677,7 +677,8 @@ CGFloat currentY;
 @property(nonatomic) UITextView* editMapping;
 @property(nonatomic) UIPickerView* pickerMapping;
 @property(nonatomic) UISegmentedControl *ctrlOrientation, *ctrlVisibility;
-@property(nonatomic) UISwitch *switchFwdLock, *switchToggleable, *switchMousePass, *switchSwipeable;
+@property(nonatomic) UISwitch *switchFwdLock, *switchToggleable, *switchMousePass, *switchSwipeable, *switchReverseScroll;
+@property(nonatomic) UISegmentedControl *fpsFormatControl;
 @property(nonatomic) UIColorWell *colorWellBackground, *colorWellStroke;
 @property(nonatomic) DBNumberedSlider *sliderStrokeWidth, *sliderCornerRadius, *sliderOpacity;
 
@@ -834,6 +835,29 @@ CGFloat currentY;
         currentY += self.editMapping.frame.size.height + 15.0;
     }
 
+    BOOL hasScrollControl = NO;
+    BOOL hasFPSControl = NO;
+    for (NSNumber *keycode in self.targetButton.properties[@"keycodes"]) {
+        hasScrollControl |= keycode.intValue == SPECIALBTN_SCROLLCONTROL;
+        hasFPSControl |= keycode.intValue == SPECIALBTN_FPS;
+    }
+    if (hasScrollControl) {
+        UILabel *labelReverseScroll = [self addLabel:@"Reverse scroll"];
+        self.switchReverseScroll = [[UISwitch alloc] initWithFrame:CGRectMake(width - 62.0, currentY - 5.0, 50.0, 30.0)];
+        self.switchReverseScroll.on = [self.targetButton.properties[@"reverseScroll"] boolValue];
+        [self.scrollView addSubview:self.switchReverseScroll];
+        currentY += labelReverseScroll.frame.size.height + 15.0;
+    }
+    if (hasFPSControl) {
+        UILabel *labelFPSFormat = [self addLabel:@"FPS text format"];
+        self.fpsFormatControl = [[UISegmentedControl alloc] initWithItems:@[@"60 FPS", @"FPS: 60", @"FPS: 60/s"]];
+        NSArray *formats = @[@"%d FPS", @"FPS: %d", @"FPS: %d/s"];
+        NSInteger selected = [formats indexOfObject:self.targetButton.properties[@"fpsFormat"] ?: @"FPS: %d"];
+        self.fpsFormatControl.selectedSegmentIndex = selected == NSNotFound ? 1 : selected;
+        self.fpsFormatControl.frame = CGRectMake(0, currentY - 5.0, width, 30.0);
+        [self.scrollView addSubview:self.fpsFormatControl];
+        currentY += labelFPSFormat.frame.size.height + 35.0;
+    }
 
     if (![self.targetButton isKindOfClass:ControlJoystick.class]) {
         // Property: Toggleable
@@ -989,6 +1013,11 @@ CGFloat currentY;
     self.targetButton.properties[@"isToggle"] = @(self.switchToggleable.isOn);
     self.targetButton.properties[@"passThruEnabled"] = @(self.switchMousePass.isOn);
     self.targetButton.properties[@"isSwipeable"] = @(self.switchSwipeable.isOn);
+    if (self.switchReverseScroll) self.targetButton.properties[@"reverseScroll"] = @(self.switchReverseScroll.isOn);
+    if (self.fpsFormatControl) {
+        NSArray *formats = @[@"%d FPS", @"FPS: %d", @"FPS: %d/s"];
+        self.targetButton.properties[@"fpsFormat"] = formats[MAX(0, self.fpsFormatControl.selectedSegmentIndex)];
+    }
 
     NSMutableDictionary *newProperties = self.targetButton.properties.mutableCopy;
 

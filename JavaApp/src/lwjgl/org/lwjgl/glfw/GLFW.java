@@ -1126,6 +1126,7 @@ public class GLFW
     }
 
     public static void glfwSwapBuffers(@NativeType("GLFWwindow *") long window) {
+        CallbackBridge.nativeOnFramePresented();
         long __functionAddress = Functions.SwapBuffers;
         invokePV(window, __functionAddress);
     }

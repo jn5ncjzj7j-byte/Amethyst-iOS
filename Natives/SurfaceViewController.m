@@ -27,6 +27,8 @@
 #include "renderer_info.h"
 #include "utils.h"
 
+extern unsigned int amethystTakeRenderedFrames(void);
+
 #include <dlfcn.h>
 
 int memorystatus_control(uint32_t command, int32_t pid, uint32_t flags, void *buffer, size_t buffersize);
@@ -198,6 +200,26 @@ static GameSurfaceView* pojavWindow;
     id tickInput = ^{
         [GyroInput tick];
         [ControllerInput tick];
+        static CFTimeInterval lastFPSUpdate = 0;
+        static NSUInteger accumulatedFrames = 0;
+        accumulatedFrames += amethystTakeRenderedFrames();
+        CFTimeInterval now = CACurrentMediaTime();
+        if (lastFPSUpdate == 0) lastFPSUpdate = now;
+        else if (now - lastFPSUpdate >= 1.0) {
+            NSInteger fps = (NSInteger)round((double)accumulatedFrames / (now - lastFPSUpdate));
+            for (UIView *view in self.ctrlView.subviews) {
+                if (![view isKindOfClass:ControlButton.class]) continue;
+                ControlButton *button = (ControlButton *)view;
+                BOOL isFPSButton = NO;
+                for (NSNumber *keycode in button.properties[@"keycodes"]) if (keycode.intValue == SPECIALBTN_FPS) isFPSButton = YES;
+                if (isFPSButton) {
+                    button.properties[@"fpsValue"] = @(fps);
+                    [button update];
+                }
+            }
+            accumulatedFrames = 0;
+            lastFPSUpdate = now;
+        }
     };
     CADisplayLink *displayLink = [CADisplayLink displayLinkWithTarget:tickInput selector:@selector(invoke)];
     if (@available(iOS 15.0, tvOS 15.0, *)) {
@@ -1016,9 +1038,11 @@ static GameSurfaceView* pojavWindow;
                     break;
 
                 case SPECIALBTN_SCROLLUP:
-                    if (!held) {
-                        CallbackBridge_nativeSendScroll(0.0, -1.0);
-                    }
+                    if (!held) CallbackBridge_nativeSendScroll(0.0, -1.0);
+                    break;
+
+                case SPECIALBTN_SCROLLCONTROL:
+                case SPECIALBTN_FPS:
                     break;
 
                 case SPECIALBTN_VIRTUALMOUSE:
@@ -1114,6 +1138,11 @@ static GameSurfaceView* pojavWindow;
 
 - (void)executebtn_up_outside:(ControlButton *)sender {
     [self executebtn_up:sender isOutside:YES];
+}
+
+- (void)sendControlScrollDelta:(CGFloat)delta reverse:(BOOL)reverse {
+    CGFloat scroll = delta / 24.0;
+    CallbackBridge_nativeSendScroll(0.0, reverse ? -scroll : scroll);
 }
 
 - (void)executebtn_special_togglebtn:(int)held {

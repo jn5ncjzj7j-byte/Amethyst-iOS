@@ -504,6 +504,8 @@ void initKeycodeTable(NSMutableArray* keyCodeMap, NSMutableArray* keyValueMap) {
     addspec(SPECIALBTN_MENU)
     addspec(SPECIALBTN_SCROLLDOWN)
     addspec(SPECIALBTN_SCROLLUP)
+    addspec(SPECIALBTN_SCROLLCONTROL)
+    addspec(SPECIALBTN_FPS)
     addspec(SPECIALBTN_VIRTUALMOUSE)
     addspec(SPECIALBTN_MOUSEMID)
     addspec(SPECIALBTN_MOUSESEC)
