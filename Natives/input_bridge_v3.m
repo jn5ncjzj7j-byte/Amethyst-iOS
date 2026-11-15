@@ -23,7 +23,7 @@
 
 static atomic_uint amethystRenderedFrames;
 
-JNIEXPORT void JNICALL Java_org_lwjgl_glfw_CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
+static void CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
     atomic_fetch_add_explicit(&amethystRenderedFrames, 1, memory_order_relaxed);
 }
 
@@ -295,6 +295,19 @@ void ensureGLFWBridge() {
         return;
     }
     vmGlfwClass = (*env)->NewGlobalRef(env, localGlfwClass);
+
+    jclass callbackBridgeClass = (*env)->FindClass(env, "org/lwjgl/glfw/CallbackBridge");
+    if (callbackBridgeClass != NULL) {
+        JNINativeMethod frameMethods[] = {
+            {"nativeOnFramePresented", "()V", (void *)&CallbackBridge_nativeOnFramePresented}
+        };
+        if ((*env)->RegisterNatives(env, callbackBridgeClass, frameMethods, 1) != JNI_OK) {
+            if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+            NSLog(@"JNI_OnLoadGLFW: Failed to register frame counter callback");
+        }
+    } else if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionClear(env);
+    }
 
     method_internalWindowSizeChanged = (*env)->GetStaticMethodID(env, vmGlfwClass, "internalWindowSizeChanged", "(JII)V");
     if (method_internalWindowSizeChanged == NULL) {
