@@ -85,6 +85,9 @@
     UIImageView *imageView = [UIImageView new];
     imageView.translatesAutoresizingMaskIntoConstraints = NO;
     imageView.contentMode = UIViewContentModeScaleAspectFit;
+    imageView.backgroundColor = UIColor.blackColor;
+    imageView.layer.cornerRadius = 18;
+    imageView.clipsToBounds = YES;
     [preview.view addSubview:imageView];
     UIButton *colorButton = [UIButton buttonWithType:UIButtonTypeSystem];
     colorButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -94,8 +97,8 @@
     [NSLayoutConstraint activateConstraints:@[
         [imageView.centerXAnchor constraintEqualToAnchor:preview.view.centerXAnchor],
         [imageView.centerYAnchor constraintEqualToAnchor:preview.view.centerYAnchor constant:-24],
-        [imageView.widthAnchor constraintEqualToConstant:120],
-        [imageView.heightAnchor constraintEqualToConstant:120],
+        [imageView.widthAnchor constraintEqualToConstant:180],
+        [imageView.heightAnchor constraintEqualToConstant:180],
         [colorButton.topAnchor constraintEqualToAnchor:imageView.bottomAnchor constant:24],
         [colorButton.centerXAnchor constraintEqualToAnchor:preview.view.centerXAnchor]
     ]];
@@ -242,7 +245,7 @@
         NSString *keyFull = [NSString stringWithFormat:@"%@.%@", section, key];
         setPrefObject(keyFull, value);
         if ([section isEqualToString:@"control"] &&
-            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image"] containsObject:key]) {
+            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image", @"mouse_cursor_hotspot"] containsObject:key]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
         }
     };
