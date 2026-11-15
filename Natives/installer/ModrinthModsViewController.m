@@ -509,7 +509,9 @@ static NSString *MRCategorySymbol(NSString *category) {
 - (NSString *)contentType { return @"mod"; }
 
 - (void)importLocalFile {
-    NSArray<UTType *> *types = [self.contentType isEqual:@"mod"] ? @[[UTType typeWithFilenameExtension:@"jar"] ?: UTType.data] : @[[UTType typeWithFilenameExtension:@"zip"] ?: UTType.archive];
+    UTType *fileType = [UTType typeWithFilenameExtension:[self.contentType isEqual:@"mod"] ? @"jar" : @"zip"];
+    if (!fileType) fileType = [UTType typeWithIdentifier:@"public.data"];
+    NSArray<UTType *> *types = @[fileType];
     UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:YES];
     picker.allowsMultipleSelection = YES;
     picker.delegate = self;
