@@ -1,6 +1,6 @@
 name: Development build
 
-# Manual development builds package the iOS IPA only.
+# Manual development builds package one iOS IPA after source fixes.
 
 on:
   pull_request:
