@@ -167,6 +167,9 @@
             initWithTarget:self action:@selector(showControlPopover:)]];
         [button addGestureRecognizer:[[UIPanGestureRecognizer alloc]
             initWithTarget:self action:@selector(onTouch:)]];
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)];
+        longPress.minimumPressDuration = 0.5;
+        [button addGestureRecognizer:longPress];
     }
 }
 
@@ -215,6 +218,11 @@
         return;
     }
 
+    if ([sender isKindOfClass:UITapGestureRecognizer.class] && [sender.view isKindOfClass:ControlButton.class]) {
+        [self actionMenuBtnEdit];
+        return;
+    }
+
     UIMenuController *menuController = [UIMenuController sharedMenuController];
 
     if (![sender.view isKindOfClass:[ControlButton class]]) {
@@ -235,9 +243,9 @@
         UIMenuItem *actionDelete = [[UIMenuItem alloc] initWithTitle:localize(@"Remove", nil) action:@selector(actionMenuBtnDelete)];
         if ([sender.view isKindOfClass:[ControlDrawer class]]) {
             UIMenuItem *actionAddSubButton = [[UIMenuItem alloc] initWithTitle:localize(@"custom_controls.button_menu.add_subbutton", nil) action:@selector(actionMenuAddSubButton)];
-            [menuController setMenuItems:@[actionEdit, /* actionCopy, */ actionDelete, actionAddSubButton]];
+            [menuController setMenuItems:@[actionEdit, actionDelete, actionAddSubButton]];
         } else {
-            [menuController setMenuItems:@[actionEdit, /* actionCopy, */ actionDelete]];
+            [menuController setMenuItems:@[actionEdit, actionCopy, actionDelete]];
         }
         self.selectedPoint = sender.view.bounds;
     }
@@ -384,6 +392,9 @@
         initWithTarget:self action:@selector(showControlPopover:)]];
     [button addGestureRecognizer:[[UIPanGestureRecognizer alloc]
         initWithTarget:self action:@selector(onTouch:)]];
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)];
+    longPress.minimumPressDuration = 0.5;
+    [button addGestureRecognizer:longPress];
 }
 
 - (void)actionMenuAddButton {
@@ -414,6 +425,9 @@
         initWithTarget:self action:@selector(showControlPopover:)]];
     [button addGestureRecognizer:[[UIPanGestureRecognizer alloc]
         initWithTarget:self action:@selector(onTouch:)]];
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)];
+    longPress.minimumPressDuration = 0.5;
+    [button addGestureRecognizer:longPress];
 }
 
 - (void)actionMenuAddSubButton {
@@ -440,10 +454,61 @@
         initWithTarget:self action:@selector(showControlPopover:)]];
     [button addGestureRecognizer:[[UIPanGestureRecognizer alloc]
         initWithTarget:self action:@selector(onTouch:)]];
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)];
+    longPress.minimumPressDuration = 0.5;
+    [button addGestureRecognizer:longPress];
 }
 
 - (void)actionMenuBtnCopy {
-    // copy
+    ControlButton *source = (ControlButton *)self.currentGesture.view;
+    if ([source isKindOfClass:ControlDrawer.class]) return;
+
+    NSError *error;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:source.properties options:0 error:&error];
+    if (!data) {
+        showDialog(localize(@"Error", nil), error.localizedDescription);
+        return;
+    }
+    NSMutableDictionary *properties = [[NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error] mutableCopy];
+    if (!properties) {
+        showDialog(localize(@"Error", nil), error.localizedDescription);
+        return;
+    }
+
+    ControlButton *copy;
+    if ([source isKindOfClass:ControlSubButton.class]) {
+        ControlSubButton *subCopy = [ControlSubButton buttonWithProperties:properties];
+        subCopy.parentDrawer = ((ControlSubButton *)source).parentDrawer;
+        copy = subCopy;
+    } else if ([source isKindOfClass:ControlJoystick.class]) {
+        copy = [ControlJoystick buttonWithProperties:properties];
+    } else {
+        copy = [ControlButton buttonWithProperties:properties];
+    }
+
+    CGFloat x = MIN(MAX(0, source.frame.origin.x + 18.0), self.ctrlView.bounds.size.width - source.frame.size.width);
+    CGFloat y = MIN(MAX(0, source.frame.origin.y + 18.0), self.ctrlView.bounds.size.height - source.frame.size.height);
+    copy.properties[@"dynamicX"] = [source generateDynamicX:x];
+    copy.properties[@"dynamicY"] = [source generateDynamicY:y];
+
+    NSUInteger index;
+    if ([copy isKindOfClass:ControlSubButton.class]) {
+        index = ((ControlSubButton *)copy).parentDrawer.buttons.count;
+    } else if ([copy isKindOfClass:ControlJoystick.class]) {
+        index = [self.ctrlView.layoutDictionary[@"mJoystickDataList"] count];
+    } else {
+        index = [self.ctrlView.layoutDictionary[@"mControlDataList"] count];
+    }
+    [self doAddButton:copy atIndex:@(index)];
+    [copy update];
+    [copy addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)]];
+    [copy addGestureRecognizer:[[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onTouch:)]];
+    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showControlPopover:)];
+    longPress.minimumPressDuration = 0.5;
+    [copy addGestureRecognizer:longPress];
+    if ([copy isKindOfClass:ControlSubButton.class]) {
+        [((ControlSubButton *)copy).parentDrawer syncButtons];
+    }
 }
 
 - (void)actionMenuBtnDelete {
@@ -459,6 +524,7 @@
     vc.preferredContentSize = self.view.frame.size;
     if (![self.currentGesture isKindOfClass:[UILongPressGestureRecognizer class]]) {
         vc.targetButton = (ControlButton *)self.currentGesture.view;
+        vc.parentEditor = self;
     }
     [self presentViewController:vc animated:YES completion:nil];
 }
@@ -663,8 +729,9 @@ CGFloat currentY;
     [popoverToolbar addGestureRecognizer:dragVCGesture];
     
     UIBarButtonItem *popoverCancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(actionEditCancel)];
+    UIBarButtonItem *popoverDeleteButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(actionEditDelete)];
     UIBarButtonItem *popoverDoneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(actionEditFinish)];
-    popoverToolbar.items = @[popoverCancelButton, btnFlexibleSpace, popoverDoneButton]; 
+    popoverToolbar.items = @[popoverCancelButton, popoverDeleteButton, btnFlexibleSpace, popoverDoneButton]; 
     [blurView.contentView addSubview:popoverToolbar];
 
     self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(5.0, popoverToolbar.frame.size.height, blurView.frame.size.width - 10.0, blurView.frame.size.height - popoverToolbar.frame.size.height)];
@@ -867,6 +934,17 @@ CGFloat currentY;
     currentY += labelVisibility.frame.size.height + 15.0;
 
     self.scrollView.contentSize = CGSizeMake(self.scrollView.contentSize.width, currentY);
+}
+
+- (void)actionEditDelete {
+    UIAlertController *confirm = [UIAlertController alertControllerWithTitle:localize(@"Remove", nil) message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [confirm addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:nil]];
+    [confirm addAction:[UIAlertAction actionWithTitle:localize(@"Remove", nil) style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self dismissViewControllerAnimated:YES completion:^{
+            [self.parentEditor doRemoveButton:self.targetButton];
+        }];
+    }]];
+    [self presentViewController:confirm animated:YES completion:nil];
 }
 
 #pragma mark - Gesture callback
