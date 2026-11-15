@@ -546,7 +546,7 @@ static NSString *MRCategorySymbol(NSString *category) {
     [super viewWillAppear:animated];
     [self refreshProfile];
     [self refreshProviderAvailability];
-    if (self.isInstalledMode && !self.installedOperation.busy) [self refreshInstalled:YES];
+    if (self.isInstalledMode && !self.installedOperation.busy) [self refreshInstalled:NO];
 }
 - (void)dealloc {
     [NSNotificationCenter.defaultCenter removeObserver:self];
@@ -591,7 +591,7 @@ static NSString *MRCategorySymbol(NSString *category) {
 - (void)providerChanged:(UISegmentedControl *)sender {
     [self.searchBar resignFirstResponder];
     if (sender.selectedSegmentIndex == 1 && ![CurseForgeAPI isConfigured]) { sender.selectedSegmentIndex = 0; }
-    if (self.isInstalledMode) { self.requestGeneration++; [self updateSearchPlaceholder]; [self refreshInstalled:YES]; return; }
+    if (self.isInstalledMode) { self.requestGeneration++; [self updateSearchPlaceholder]; [self refreshInstalled:NO]; return; }
     self.provider = sender.selectedSegmentIndex == 1 ? @"curseforge" : @"modrinth";
     self.categoryCatalog = nil;
     self.filters[@"categories"] = @[];
@@ -803,7 +803,7 @@ static NSString *MRCategorySymbol(NSString *category) {
         if (wasBusy && !self.installedOperation.busy && !self.installedOperation.checking) {
             wasBusy = NO;
             if (self.installedOperation.error) [self showInstalledError:self.installedOperation.error];
-            [self refreshInstalled:YES];
+            [self refreshInstalled:NO];
         } else if (self.isInstalledMode) [self.tableView reloadData];
     };
     if (!version) [self.installedOperation resolveDependenciesWithFilters:self.profileDefaults];
@@ -824,7 +824,7 @@ static NSString *MRCategorySymbol(NSString *category) {
         else [InstalledModsManager setEntry:entry enabled:![entry[@"enabled"] boolValue] directory:directory error:&error];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![context isEqual:self.profileSignature]) return;
-            self.installedLoading = NO; if (error) [self showInstalledError:error]; [self refreshInstalled:YES];
+            self.installedLoading = NO; if (error) [self showInstalledError:error]; [self refreshInstalled:NO];
         });
     });
 }
@@ -832,7 +832,7 @@ static NSString *MRCategorySymbol(NSString *category) {
     if ([ModrinthModInstallation isInstalling] || self.installedLoading) return;
     if (indexPath.section == 0) { if (indexPath.row == 0) [self refreshInstalled:YES]; else [self runInstalledVersion:nil entry:nil enable:NO]; return; }
     NSArray *entries = self.visibleInstalledEntries;
-    if (!entries.count) { if (self.installedError) [self refreshInstalled:YES]; return; }
+    if (!entries.count) { if (self.installedError) [self refreshInstalled:NO]; return; }
     NSDictionary *entry = entries[indexPath.row];
     UIAlertController *menu = [UIAlertController alertControllerWithTitle:entry[@"project"][@"title"] ?: entry[@"filename"] message:entry[@"filename"] preferredStyle:UIAlertControllerStyleActionSheet];
     [menu addAction:[UIAlertAction actionWithTitle:localize([entry[@"enabled"] boolValue] ? @"mods.installed.disable" : entry[@"version"] ? @"mods.installed.enable" : @"mods.installed.enable_file", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
