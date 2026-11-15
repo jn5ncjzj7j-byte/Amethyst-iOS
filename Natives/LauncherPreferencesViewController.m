@@ -40,7 +40,7 @@
 }
 - (void)ame_setFont:(UIFont *)font {
     NSString *fontName = getPrefObject(@"general.launcher_font_name");
-    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    UIFont *customFont = fontName.length && font ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
     [self ame_setFont:customFont ?: font];
 }
 @end
@@ -259,9 +259,15 @@ static void AmethystRefreshLauncherFont(void) {
 }
 
 - (void)resetLauncherFont {
-    setPrefObject(@"general.launcher_font_name", nil);
-    setPrefObject(@"general.launcher_font_path", nil);
+    NSString *oldPath = getPrefObject(@"general.launcher_font_path");
+    setPrefObject(@"general.launcher_font_name", @"");
+    setPrefObject(@"general.launcher_font_path", @"");
     AmethystRefreshLauncherFont();
+    if (oldPath.length) {
+        NSURL *fontURL = [NSURL fileURLWithPath:oldPath];
+        CTFontManagerUnregisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, nil);
+        [NSFileManager.defaultManager removeItemAtPath:oldPath error:nil];
+    }
     showDialog(@"Launcher font reset", @"The launcher is now using its default font.");
     [self.tableView reloadData];
 }
