@@ -21,6 +21,7 @@
 @property(nonatomic) NSArray<NSString*> *rendererKeys, *rendererList;
 @property(nonatomic, weak) UIImageView *cursorPreviewImageView;
 @property(nonatomic, weak) UIViewController *cursorPreviewController;
+@property(nonatomic) BOOL importingLauncherConfiguration;
 @end
 
 @implementation LauncherPreferencesViewController
@@ -62,10 +63,10 @@
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    CGContextFillRect(context, CGRectMake(6, 0, 4, 7));
-    CGContextFillRect(context, CGRectMake(6, 9, 4, 7));
-    CGContextFillRect(context, CGRectMake(0, 6, 7, 4));
-    CGContextFillRect(context, CGRectMake(9, 6, 7, 4));
+    CGContextFillRect(context, CGRectMake(5, 0, 6, 7));
+    CGContextFillRect(context, CGRectMake(5, 9, 6, 7));
+    CGContextFillRect(context, CGRectMake(0, 5, 7, 6));
+    CGContextFillRect(context, CGRectMake(9, 5, 7, 6));
     CGContextSetFillColorWithColor(context, [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")].CGColor);
     CGContextFillRect(context, CGRectMake(7, 0, 2, 6));
     CGContextFillRect(context, CGRectMake(7, 10, 2, 6));
@@ -152,7 +153,7 @@
         showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not export launcher configuration.");
         return;
     }
-    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Amethyst-Launcher-Config.json"];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Amethyst-Launcher-Backup.json"];
     if (![data writeToFile:path options:NSDataWritingAtomic error:&error]) {
         showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not save launcher configuration.");
         return;
@@ -161,6 +162,15 @@
     activity.popoverPresentationController.sourceView = self.view;
     activity.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
     [self presentViewController:activity animated:YES completion:nil];
+}
+
+- (void)importLauncherConfiguration {
+    self.importingLauncherConfiguration = YES;
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.json"]] asCopy:YES];
+    picker.delegate = self;
+    picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:picker animated:YES completion:nil];
 }
 
 - (void)importMouseCursorImage {
@@ -225,8 +235,27 @@
     }];
 }
 
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
+    self.importingLauncherConfiguration = NO;
+}
+
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
     NSURL *source = urls.firstObject;
+    if (self.importingLauncherConfiguration) {
+        self.importingLauncherConfiguration = NO;
+        if (!source) return;
+        NSData *backupData = [NSData dataWithContentsOfURL:source];
+        NSDictionary *backup = backupData ? [NSJSONSerialization JSONObjectWithData:backupData options:NSJSONReadingMutableContainers error:nil] : nil;
+        if (![backup isKindOfClass:NSDictionary.class] || ![backup[@"format"] isEqualToString:@"Amethyst Launcher Configuration"] || [backup[@"format_version"] integerValue] != 1) {
+            showDialog(localize(@"Error", nil), @"This is not a valid Amethyst launcher backup.");
+            return;
+        }
+        importLauncherConfigFromDictionary(backup);
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
+        [self.tableView reloadData];
+        showDialog(localize(@"preference.title.import_launcher_config", nil), @"Launcher settings and touch-control layouts were imported.");
+        return;
+    }
     if (!source) return;
 
     NSString *extension = source.pathExtension.lowercaseString;
@@ -343,6 +372,13 @@
               @"suppressDoneAlert": @YES,
               @"enableCondition": whenNotInGame,
               @"action": ^void(){ [self exportLauncherConfiguration]; }
+            },
+            @{@"key": @"import_launcher_config",
+              @"icon": @"square.and.arrow.down",
+              @"type": self.typeButton,
+              @"suppressDoneAlert": @YES,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self importLauncherConfiguration]; }
             },
             @{@"key": @"reset_warnings",
               @"icon": @"exclamationmark.triangle",

@@ -515,3 +515,5 @@
 "preference.title.import_photo_library" = "Photo Library";
 "preference.title.import_files" = "Browse Files";
 "preference.title.import_content" = "Import";
+
+"preference.title.import_launcher_config" = "Import launcher backup";

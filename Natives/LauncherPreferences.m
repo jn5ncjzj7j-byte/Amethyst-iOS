@@ -50,6 +50,43 @@ void setPrefInt(NSString *key, NSInteger value) {
     setPrefObject(key, @(value));
 }
 
+void importLauncherConfigFromDictionary(NSDictionary *config) {
+    if (![config[@"format"] isEqualToString:@"Amethyst Launcher Configuration"] || [config[@"format_version"] integerValue] != 1) return;
+    NSDictionary *globalPreferences = config[@"global_preferences"];
+    if ([globalPreferences isKindOfClass:NSDictionary.class]) {
+        pref.globalPref = [globalPreferences mutableCopy];
+        [pref saveGlobalPref];
+    }
+    NSDictionary *profilePreferences = config[@"active_profile_preferences"];
+    if ([profilePreferences isKindOfClass:NSDictionary.class]) {
+        if (!pref.instancePath) pref.instancePath = [NSString stringWithFormat:@"%s/launcher_preferences.plist", getenv("GAME_DIR")];
+        pref.instancePref = [profilePreferences mutableCopy];
+        [pref saveInstancePref];
+    }
+    NSDictionary *cursorImage = config[@"custom_cursor_image"];
+    NSString *encodedImage = cursorImage[@"base64"];
+    if ([encodedImage isKindOfClass:NSString.class] && encodedImage.length) {
+        NSData *imageData = [[NSData alloc] initWithBase64EncodedString:encodedImage options:0];
+        NSString *extension = [cursorImage[@"filename"] pathExtension].lowercaseString;
+        NSSet *allowedExtensions = [NSSet setWithArray:@[@"png", @"jpg", @"jpeg", @"heic", @"webp"]];
+        if (![allowedExtensions containsObject:extension]) extension = @"png";
+        if (imageData.length) {
+            NSString *imagePath = [NSString stringWithFormat:@"%s/custom_mouse_cursor.%@", getenv("AME_HOME"), extension];
+            if ([imageData writeToFile:imagePath options:NSDataWritingAtomic error:nil]) setPrefObject(@"control.mouse_cursor_image", imagePath);
+        }
+    }
+    NSDictionary *touchControls = config[@"touch_controls"];
+    if ([touchControls isKindOfClass:NSDictionary.class]) {
+        NSString *controlMapPath = [@(getenv("AME_HOME")) stringByAppendingPathComponent:@"controlmap"];
+        [NSFileManager.defaultManager createDirectoryAtPath:controlMapPath withIntermediateDirectories:YES attributes:nil error:nil];
+        [touchControls enumerateKeysAndObjectsUsingBlock:^(id filename, id layout, BOOL *stop) {
+            if (![filename isKindOfClass:NSString.class] || ![[filename pathExtension].lowercaseString isEqualToString:@"json"] || ![[filename lastPathComponent] isEqualToString:filename] || ![layout isKindOfClass:NSDictionary.class]) return;
+            NSData *data = [NSJSONSerialization dataWithJSONObject:layout options:NSJSONWritingPrettyPrinted error:nil];
+            if (data) [data writeToFile:[controlMapPath stringByAppendingPathComponent:filename] options:NSDataWritingAtomic error:nil];
+        }];
+    }
+}
+
 NSDictionary *getLauncherConfigForExport(void) {
     NSMutableDictionary *config = [@{
         @"format": @"Amethyst Launcher Configuration",
@@ -68,6 +105,16 @@ NSDictionary *getLauncherConfigForExport(void) {
             @"base64": [imageData base64EncodedStringWithOptions:0]
         };
     }
+    NSString *controlMapPath = [@(getenv("AME_HOME")) stringByAppendingPathComponent:@"controlmap"];
+    NSArray *controlFiles = [NSFileManager.defaultManager contentsOfDirectoryAtPath:controlMapPath error:nil];
+    NSMutableDictionary *touchControls = [NSMutableDictionary new];
+    for (NSString *filename in controlFiles) {
+        if (![filename.pathExtension.lowercaseString isEqualToString:@"json"]) continue;
+        NSData *controlData = [NSData dataWithContentsOfFile:[controlMapPath stringByAppendingPathComponent:filename]];
+        id controlLayout = controlData ? [NSJSONSerialization JSONObjectWithData:controlData options:NSJSONReadingMutableContainers error:nil] : nil;
+        if ([controlLayout isKindOfClass:NSDictionary.class]) touchControls[filename] = controlLayout;
+    }
+    config[@"touch_controls"] = touchControls;
     return config;
 }
 

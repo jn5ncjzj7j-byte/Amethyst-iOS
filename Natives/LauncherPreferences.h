@@ -14,6 +14,7 @@ void setPrefFloat(NSString *key, float value);
 void setPrefInt(NSString *key, NSInteger value);
 
 NSDictionary *getLauncherConfigForExport(void);
+void importLauncherConfigFromDictionary(NSDictionary *config);
 
 void resetWarnings();
 

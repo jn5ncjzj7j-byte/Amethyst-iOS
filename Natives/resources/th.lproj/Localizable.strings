@@ -452,3 +452,5 @@
 "preference.title.import_photo_library" = "คลังรูปภาพ";
 "preference.title.import_files" = "เลือกจากไฟล์";
 "preference.title.import_content" = "นำเข้า";
+
+"preference.title.import_launcher_config" = "นำเข้าข้อมูลสำรอง Launcher";
