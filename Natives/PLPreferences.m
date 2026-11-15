@@ -54,6 +54,7 @@
             @"mouse_cursor_color": @"white",
             @"mouse_cursor_image": @"",
             @"mouse_cursor_hotspot": @"top_left",
+            @"mouse_cursor_corner_radius": @(2),
             @"gyroscope_enable": @NO,
             @"gyroscope_invert_x_axis": @NO,
             @"gyroscope_sensitivity": @(100)
