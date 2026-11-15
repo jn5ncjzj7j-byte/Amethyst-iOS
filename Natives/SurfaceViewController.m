@@ -30,6 +30,7 @@
 extern unsigned int amethystTakeRenderedFrames(void);
 
 #include <dlfcn.h>
+#include <math.h>
 
 int memorystatus_control(uint32_t command, int32_t pid, uint32_t flags, void *buffer, size_t buffersize);
 #define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT        6
