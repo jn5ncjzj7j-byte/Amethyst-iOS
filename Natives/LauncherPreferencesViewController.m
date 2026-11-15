@@ -386,7 +386,7 @@
                 @"type": self.typePickField,
                 @"pickKeys": @[@"arrow", @"crosshair", @"circle", @"hand", @"image"],
                 @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand", @"Imported image"]
-            },,
+            },
             @{@"key": @"mouse_cursor_color",
                 @"hasDetail": @YES,
                 @"icon": @"paintpalette",
