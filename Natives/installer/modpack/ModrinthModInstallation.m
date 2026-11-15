@@ -182,7 +182,6 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
         if (!error && unknown.count && [self.provider isEqual:@"modrinth"]) {
             ModrinthAPI *api = [ModrinthAPI new];
             NSDictionary *resolved = [api versionsForFileHashes:unknown];
-            error = api.lastError;
             for (NSString *hash in resolved) {
                 if ([resolved[hash] isKindOfClass:NSDictionary.class]) identities[hash] = MIIdentity(resolved[hash], nil);
             }
@@ -275,7 +274,9 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
             NSError *error = downloadError;
             NSData *data = [object isKindOfClass:NSData.class] ? object : nil;
             if (self.progress.cancelled) error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
-            if (!error && (data.length != [file[@"size"] unsignedLongLongValue] || ![MIHash(data) isEqual:hash.lowercaseString])) error = MIError(@"mods.install.hash_error");
+            NSHTTPURLResponse *httpResponse = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
+            if (!error && httpResponse && (httpResponse.statusCode < 200 || httpResponse.statusCode >= 300)) error = [NSError errorWithDomain:NSURLErrorDomain code:httpResponse.statusCode userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"Download server returned HTTP %ld", (long)httpResponse.statusCode]}];
+            if (!error && (!data || data.length != [file[@"size"] unsignedLongLongValue] || ![MIHash(data) isEqual:hash.lowercaseString])) error = MIError(@"mods.install.hash_error");
             if (!error) [self commitData:data file:file error:&error];
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.busy = NO;
@@ -316,7 +317,7 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
     [NSNotificationCenter.defaultCenter postNotificationName:ModrinthModInstallStateDidChangeNotification object:self]; [self changed];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSError *error;
-        NSArray *entries = [InstalledModsManager entriesInDirectory:self.modsDirectory identify:YES error:&error];
+        NSArray *entries = [InstalledModsManager entriesInDirectory:self.modsDirectory identify:NO error:&error];
         BOOL disabled = NO;
         for (NSDictionary *entry in entries) if ([entry[@"version"][@"project_id"] isEqual:self.projectID] && [entry[@"provider"] isEqual:self.provider]) disabled |= ![entry[@"enabled"] boolValue];
         if ([filters[@"enableRequested"] boolValue]) disabled = NO;
@@ -371,7 +372,9 @@ static NSDictionary *MIIdentity(NSDictionary *version, NSString *projectID) {
         NSData *data = [object isKindOfClass:NSData.class] ? object : nil;
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
             NSError *error = downloadError;
-            if (!error && (data.length != [file[@"size"] unsignedLongLongValue] || ![MIHash(data) isEqual:hash.lowercaseString])) error = MIError(@"mods.install.hash_error");
+            NSHTTPURLResponse *httpResponse = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
+            if (!error && httpResponse && (httpResponse.statusCode < 200 || httpResponse.statusCode >= 300)) error = [NSError errorWithDomain:NSURLErrorDomain code:httpResponse.statusCode userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"Download server returned HTTP %ld", (long)httpResponse.statusCode]}];
+            if (!error && (!data || data.length != [file[@"size"] unsignedLongLongValue] || ![MIHash(data) isEqual:hash.lowercaseString])) error = MIError(@"mods.install.hash_error");
             NSString *path = [self.dependencyStage stringByAppendingPathComponent:hash];
             if (!error) [data writeToFile:path options:NSDataWritingAtomic error:&error];
             dispatch_async(dispatch_get_main_queue(), ^{
