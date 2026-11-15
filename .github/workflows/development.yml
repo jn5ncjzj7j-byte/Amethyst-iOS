@@ -1,5 +1,7 @@
 name: Development build
 
+# Manual development builds package the iOS IPA only.
+
 on:
   pull_request:
     branches-ignore:
