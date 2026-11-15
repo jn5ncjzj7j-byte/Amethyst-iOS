@@ -58,6 +58,24 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
+- (UIImage *)cursorPreviewCrosshairImage {
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+    CGContextFillRect(context, CGRectMake(6, 0, 4, 7));
+    CGContextFillRect(context, CGRectMake(6, 9, 4, 7));
+    CGContextFillRect(context, CGRectMake(0, 6, 7, 4));
+    CGContextFillRect(context, CGRectMake(9, 6, 7, 4));
+    CGContextSetFillColorWithColor(context, [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")].CGColor);
+    CGContextFillRect(context, CGRectMake(7, 0, 2, 6));
+    CGContextFillRect(context, CGRectMake(7, 10, 2, 6));
+    CGContextFillRect(context, CGRectMake(0, 7, 6, 2));
+    CGContextFillRect(context, CGRectMake(10, 7, 6, 2));
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
 - (void)refreshCursorPreview {
     NSString *shape = getPrefObject(@"control.mouse_cursor_shape");
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
@@ -67,6 +85,7 @@
         image = path.length ? [UIImage imageWithContentsOfFile:path] : nil;
     }
     if (!image && [style isEqualToString:@"minecraft"]) image = [UIImage imageNamed:@"MousePointer"];
+    if (!image && [shape isEqualToString:@"crosshair"]) image = [self cursorPreviewCrosshairImage];
     if (!image) {
         NSString *symbol = @"arrow.up.left";
         if ([shape isEqualToString:@"crosshair"]) symbol = @"plus";
@@ -75,7 +94,7 @@
         image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     }
     self.cursorPreviewImageView.image = image;
-    self.cursorPreviewImageView.tintColor = [style isEqualToString:@"minecraft"] ? nil : [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
+    self.cursorPreviewImageView.tintColor = ([style isEqualToString:@"minecraft"] || [shape isEqualToString:@"crosshair"] || [shape isEqualToString:@"image"]) ? nil : [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
 }
 
 - (void)showCursorPreview {
