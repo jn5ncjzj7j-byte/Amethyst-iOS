@@ -99,12 +99,13 @@ static GameSurfaceView* pojavWindow;
 - (UIImage *)minecraftCrosshairImage {
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
+    CGFloat cornerRadius = MIN(4.0, MAX(0.0, [getPrefObject(@"control.mouse_cursor_corner_radius") doubleValue]));
     CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    CGContextFillRect(context, CGRectMake(4, 0, 8, 16));
-    CGContextFillRect(context, CGRectMake(0, 4, 16, 8));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:cornerRadius] fill];
     CGContextSetFillColorWithColor(context, [self virtualMouseTintColor].CGColor);
-    CGContextFillRect(context, CGRectMake(6, 0, 4, 16));
-    CGContextFillRect(context, CGRectMake(0, 6, 16, 4));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 0, 4, 16) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 6, 16, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;

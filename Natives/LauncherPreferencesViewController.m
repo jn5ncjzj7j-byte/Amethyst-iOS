@@ -62,12 +62,13 @@
 - (UIImage *)cursorPreviewCrosshairImage {
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
+    CGFloat cornerRadius = MIN(4.0, MAX(0.0, [getPrefObject(@"control.mouse_cursor_corner_radius") doubleValue]));
     CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    CGContextFillRect(context, CGRectMake(4, 0, 8, 16));
-    CGContextFillRect(context, CGRectMake(0, 4, 16, 8));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(4, 0, 8, 16) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 4, 16, 8) cornerRadius:cornerRadius] fill];
     CGContextSetFillColorWithColor(context, [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")].CGColor);
-    CGContextFillRect(context, CGRectMake(6, 0, 4, 16));
-    CGContextFillRect(context, CGRectMake(0, 6, 16, 4));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 0, 4, 16) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 6, 16, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
@@ -289,7 +290,7 @@
         NSString *keyFull = [NSString stringWithFormat:@"%@.%@", section, key];
         setPrefObject(keyFull, value);
         if ([section isEqualToString:@"control"] &&
-            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image", @"mouse_cursor_hotspot"] containsObject:key]) {
+            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image", @"mouse_cursor_hotspot", @"mouse_cursor_corner_radius"] containsObject:key]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
         }
     };
@@ -617,6 +618,13 @@
                 @"action": ^void(NSString *shape) {
                     self.setPreference(@"control", @"mouse_cursor_style", @"custom");
                 }
+            },
+            @{@"key": @"mouse_cursor_corner_radius",
+                @"hasDetail": @YES,
+                @"icon": @"capsule",
+                @"type": self.typeSlider,
+                @"min": @(0),
+                @"max": @(4)
             },
             @{@"key": @"mouse_cursor_color",
                 @"icon": @"paintpalette",

@@ -852,9 +852,9 @@ CGFloat currentY;
         NSArray *formats = @[@"%d FPS", @"FPS: %d", @"FPS: %d/s"];
         NSInteger selected = [formats indexOfObject:self.targetButton.properties[@"fpsFormat"] ?: @"FPS: %d"];
         self.fpsFormatControl.selectedSegmentIndex = selected == NSNotFound ? 1 : selected;
-        self.fpsFormatControl.frame = CGRectMake(0, currentY - 5.0, width, 30.0);
+        self.fpsFormatControl.frame = CGRectMake(0, CGRectGetMaxY(labelFPSFormat.frame) + 6.0, width, 30.0);
         [self.scrollView addSubview:self.fpsFormatControl];
-        currentY += labelFPSFormat.frame.size.height + 35.0;
+        currentY = CGRectGetMaxY(self.fpsFormatControl.frame) + 12.0;
     }
 
     if (![self.targetButton isKindOfClass:ControlJoystick.class]) {
