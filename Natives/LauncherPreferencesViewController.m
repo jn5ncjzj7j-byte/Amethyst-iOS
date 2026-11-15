@@ -55,6 +55,7 @@
     setPrefObject(@"control.mouse_cursor_image", destination);
     setPrefObject(@"control.mouse_cursor_style", @"custom");
     setPrefObject(@"control.mouse_cursor_shape", @"image");
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
     showDialog(@"Cursor image imported", @"Your image will be used as the custom mouse cursor.");
     [self.tableView reloadData];
 }
@@ -78,6 +79,10 @@
     self.setPreference = ^(NSString *section, NSString *key, id value){
         NSString *keyFull = [NSString stringWithFormat:@"%@.%@", section, key];
         setPrefObject(keyFull, value);
+        if ([section isEqualToString:@"control"] &&
+            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image"] containsObject:key]) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
+        }
     };
     
     self.hasDetail = YES;
