@@ -82,6 +82,61 @@ static GameSurfaceView* pojavWindow;
     }
 }
 
+- (CGPoint)virtualMouseHotspotOffset {
+    NSString *hotspot = getPrefObject(@"control.mouse_cursor_hotspot");
+    if ([hotspot isEqualToString:@"center"]) {
+        return CGPointMake(CGRectGetWidth(virtualMouseFrame) / 2.0, CGRectGetHeight(virtualMouseFrame) / 2.0);
+    }
+    if ([hotspot isEqualToString:@"bottom_right"]) {
+        return CGPointMake(CGRectGetWidth(virtualMouseFrame), CGRectGetHeight(virtualMouseFrame));
+    }
+    return CGPointZero;
+}
+
+- (UIImage *)minecraftCrosshairImage {
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+    CGContextFillRect(context, CGRectMake(6, 0, 4, 7));
+    CGContextFillRect(context, CGRectMake(6, 9, 4, 7));
+    CGContextFillRect(context, CGRectMake(0, 6, 7, 4));
+    CGContextFillRect(context, CGRectMake(9, 6, 7, 4));
+    CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor);
+    CGContextFillRect(context, CGRectMake(7, 0, 2, 6));
+    CGContextFillRect(context, CGRectMake(7, 10, 2, 6));
+    CGContextFillRect(context, CGRectMake(0, 7, 6, 2));
+    CGContextFillRect(context, CGRectMake(10, 7, 6, 2));
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
+- (UIColor *)virtualMouseTintColor {
+    NSString *color = getPrefObject(@"control.mouse_cursor_color");
+    NSDictionary *namedColors = @{
+        @"white": UIColor.whiteColor,
+        @"black": UIColor.blackColor,
+        @"red": UIColor.systemRedColor,
+        @"blue": UIColor.systemBlueColor,
+        @"green": UIColor.systemGreenColor,
+        @"yellow": UIColor.systemYellowColor,
+        @"orange": UIColor.systemOrangeColor,
+        @"purple": UIColor.systemPurpleColor,
+        @"pink": UIColor.systemPinkColor,
+        @"cyan": UIColor.cyanColor,
+        @"magenta": UIColor.magentaColor
+    };
+    UIColor *named = namedColors[color];
+    if (named) return named;
+    NSString *hex = [color stringByReplacingOccurrencesOfString:@"#" withString:@""];
+    unsigned int value = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hex];
+    if (hex.length == 6 && [scanner scanHexInt:&value] && scanner.isAtEnd) {
+        return [UIColor colorWithRed:((value >> 16) & 0xFF) / 255.0 green:((value >> 8) & 0xFF) / 255.0 blue:(value & 0xFF) / 255.0 alpha:1.0];
+    }
+    return UIColor.whiteColor;
+}
+
 - (void)updateVirtualMouseAppearance {
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
     if (!style.length || [style isEqualToString:@"minecraft"]) {
@@ -94,7 +149,10 @@ static GameSurfaceView* pojavWindow;
     NSString *shape = getPrefObject(@"control.mouse_cursor_shape");
     NSString *symbol = @"arrow.up.left";
     if ([shape isEqualToString:@"crosshair"]) {
-        symbol = @"scope";
+        self.mousePointerView.image = [self minecraftCrosshairImage];
+        self.mousePointerView.tintColor = nil;
+        self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
+        return;
     } else if ([shape isEqualToString:@"circle"]) {
         symbol = @"circle.fill";
     } else if ([shape isEqualToString:@"hand"]) {
@@ -112,19 +170,7 @@ static GameSurfaceView* pojavWindow;
         }
     }
 
-    NSString *color = getPrefObject(@"control.mouse_cursor_color");
-    UIColor *tint = UIColor.whiteColor;
-    if ([color isEqualToString:@"black"]) {
-        tint = UIColor.blackColor;
-    } else if ([color isEqualToString:@"red"]) {
-        tint = UIColor.systemRedColor;
-    } else if ([color isEqualToString:@"blue"]) {
-        tint = UIColor.systemBlueColor;
-    } else if ([color isEqualToString:@"green"]) {
-        tint = UIColor.systemGreenColor;
-    } else if ([color isEqualToString:@"yellow"]) {
-        tint = UIColor.systemYellowColor;
-    }
+    UIColor *tint = [self virtualMouseTintColor];
 
     self.mousePointerView.image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     self.mousePointerView.tintColor = tint;
@@ -627,7 +673,8 @@ static GameSurfaceView* pojavWindow;
             virtualMouseFrame.origin.y = clamp(virtualMouseFrame.origin.y, 0, self.surfaceView.frame.size.height);
             lastVirtualMousePoint = location;
             self.mousePointerView.frame = virtualMouseFrame;
-            CallbackBridge_nativeSendCursorPos(event, virtualMouseFrame.origin.x * screenScale, virtualMouseFrame.origin.y * screenScale);
+            CGPoint hotspot = [self virtualMouseHotspotOffset];
+            CallbackBridge_nativeSendCursorPos(event, (virtualMouseFrame.origin.x + hotspot.x) * screenScale, (virtualMouseFrame.origin.y + hotspot.y) * screenScale);
             return;
         }
         lastVirtualMousePoint = location;
