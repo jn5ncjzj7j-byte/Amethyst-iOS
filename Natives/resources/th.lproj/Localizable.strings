@@ -440,3 +440,6 @@
 "preference.detail.mouse_cursor_shape" = "เลือกรูปร่างของเคอร์เซอร์แบบกำหนดเอง";
 "preference.title.mouse_cursor_color" = "สีเคอร์เซอร์แบบกำหนดเอง";
 "preference.detail.mouse_cursor_color" = "เลือกสีของเคอร์เซอร์แบบกำหนดเอง";
+
+"preference.title.mouse_cursor_image" = "นำเข้ารูปภาพเคอร์เซอร์";
+"preference.detail.mouse_cursor_image" = "เลือกรูปภาพ PNG, JPG, HEIC หรือ WebP จากแอปไฟล์";
