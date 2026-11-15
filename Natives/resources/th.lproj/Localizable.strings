@@ -433,3 +433,10 @@
 "content.version.beta" = "เบตา";
 "content.version.alpha" = "อัลฟา";
 "content.version.recommended" = "แนะนำ";
+
+"preference.title.mouse_cursor_style" = "รูปแบบเคอร์เซอร์";
+"preference.detail.mouse_cursor_style" = "เลือกระหว่างลูกศรแบบ Minecraft หรือเคอร์เซอร์ที่ปรับแต่งได้";
+"preference.title.mouse_cursor_shape" = "รูปร่างเคอร์เซอร์แบบกำหนดเอง";
+"preference.detail.mouse_cursor_shape" = "เลือกรูปร่างของเคอร์เซอร์แบบกำหนดเอง";
+"preference.title.mouse_cursor_color" = "สีเคอร์เซอร์แบบกำหนดเอง";
+"preference.detail.mouse_cursor_color" = "เลือกสีของเคอร์เซอร์แบบกำหนดเอง";
