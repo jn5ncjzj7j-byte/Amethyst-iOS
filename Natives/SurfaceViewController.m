@@ -72,6 +72,16 @@ static GameSurfaceView* pojavWindow;
     return self;
 }
 
+- (void)mouseCursorAppearanceDidChange:(NSNotification *)notification {
+    if (NSThread.isMainThread) {
+        [self updateVirtualMouseAppearance];
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self updateVirtualMouseAppearance];
+        });
+    }
+}
+
 - (void)updateVirtualMouseAppearance {
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
     if (!style.length || [style isEqualToString:@"minecraft"]) {
@@ -124,6 +134,7 @@ static GameSurfaceView* pojavWindow;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mouseCursorAppearanceDidChange:) name:@"AmethystMouseCursorAppearanceDidChange" object:nil];
     isControlModifiable = NO;
     self.isMacCatalystApp = NSProcessInfo.processInfo.isMacCatalystApp;
     // Load MetalHUD library
