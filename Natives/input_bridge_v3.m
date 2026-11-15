@@ -403,6 +403,7 @@ static size_t pollCount;
 static BOOL pollTaken;
 
 void pojavPumpEvents(void* window) {
+    ensureGLFWBridge();
     static BOOL setInputReady = NO;
     if(!setInputReady) {
         setInputReady = YES;
