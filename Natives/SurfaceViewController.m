@@ -101,7 +101,7 @@ static GameSurfaceView* pojavWindow;
     CGContextFillRect(context, CGRectMake(6, 9, 4, 7));
     CGContextFillRect(context, CGRectMake(0, 6, 7, 4));
     CGContextFillRect(context, CGRectMake(9, 6, 7, 4));
-    CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor);
+    CGContextSetFillColorWithColor(context, [self virtualMouseTintColor].CGColor);
     CGContextFillRect(context, CGRectMake(7, 0, 2, 6));
     CGContextFillRect(context, CGRectMake(7, 10, 2, 6));
     CGContextFillRect(context, CGRectMake(0, 7, 6, 2));
