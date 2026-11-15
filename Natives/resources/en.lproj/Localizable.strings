@@ -510,3 +510,8 @@
 "preference.title.mouse_cursor_hotspot" = "Cursor click point";
 "preference.detail.mouse_cursor_hotspot" = "Choose which point of the cursor is used for clicking.";
 "preference.title.export_launcher_config" = "Export launcher configuration";
+
+"preference.title.mouse_cursor_preview" = "Cursor Preview";
+"preference.title.import_photo_library" = "Photo Library";
+"preference.title.import_files" = "Browse Files";
+"preference.title.import_content" = "Import";

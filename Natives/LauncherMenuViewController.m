@@ -244,8 +244,8 @@
         }
         selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
         if ([selected.vcArray[0] isKindOfClass:ModrinthModsViewController.class]) {
-            UIBarButtonItem *importItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"plus"] style:UIBarButtonItemStylePlain target:selected.vcArray[0] action:@selector(importLocalFile)];
-            importItem.accessibilityLabel = @"Import file";
+            UIBarButtonItem *importItem = [[UIBarButtonItem alloc] initWithImage:[[UIImage imageNamed:@"ImportContent"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal] style:UIBarButtonItemStylePlain target:selected.vcArray[0] action:@selector(importLocalFile)];
+            importItem.accessibilityLabel = localize(@"preference.title.import_content", nil);
             selected.vcArray[0].navigationItem.leftBarButtonItem = importItem;
         } else {
             selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem];

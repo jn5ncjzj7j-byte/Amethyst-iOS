@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#import <PhotosUI/PhotosUI.h>
 
 #import "DBNumberedSlider.h"
 #import "HostManagerBridge.h"
@@ -16,8 +17,10 @@
 #import "utils.h"
 #import "installer/modpack/CurseForgeAPI.h"
 
-@interface LauncherPreferencesViewController()<UIDocumentPickerDelegate, UIColorPickerViewControllerDelegate>
+@interface LauncherPreferencesViewController()<UIDocumentPickerDelegate, UIColorPickerViewControllerDelegate, PHPickerViewControllerDelegate>
 @property(nonatomic) NSArray<NSString*> *rendererKeys, *rendererList;
+@property(nonatomic, weak) UIImageView *cursorPreviewImageView;
+@property(nonatomic, weak) UIViewController *cursorPreviewController;
 @end
 
 @implementation LauncherPreferencesViewController
@@ -55,6 +58,60 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
+- (void)refreshCursorPreview {
+    NSString *shape = getPrefObject(@"control.mouse_cursor_shape");
+    NSString *style = getPrefObject(@"control.mouse_cursor_style");
+    UIImage *image = nil;
+    if ([shape isEqualToString:@"image"]) {
+        NSString *path = getPrefObject(@"control.mouse_cursor_image");
+        image = path.length ? [UIImage imageWithContentsOfFile:path] : nil;
+    }
+    if (!image && [style isEqualToString:@"minecraft"]) image = [UIImage imageNamed:@"MousePointer"];
+    if (!image) {
+        NSString *symbol = @"arrow.up.left";
+        if ([shape isEqualToString:@"crosshair"]) symbol = @"plus";
+        else if ([shape isEqualToString:@"circle"]) symbol = @"circle.fill";
+        else if ([shape isEqualToString:@"hand"]) symbol = @"hand.point.up.left.fill";
+        image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    }
+    self.cursorPreviewImageView.image = image;
+    self.cursorPreviewImageView.tintColor = [style isEqualToString:@"minecraft"] ? nil : [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
+}
+
+- (void)showCursorPreview {
+    UIViewController *preview = [UIViewController new];
+    preview.title = localize(@"preference.title.mouse_cursor_preview", nil);
+    preview.view.backgroundColor = UIColor.systemBackgroundColor;
+    UIImageView *imageView = [UIImageView new];
+    imageView.translatesAutoresizingMaskIntoConstraints = NO;
+    imageView.contentMode = UIViewContentModeScaleAspectFit;
+    [preview.view addSubview:imageView];
+    UIButton *colorButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    colorButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [colorButton setTitle:localize(@"preference.title.mouse_cursor_custom_color", nil) forState:UIControlStateNormal];
+    [colorButton addTarget:self action:@selector(chooseMouseCursorColor) forControlEvents:UIControlEventTouchUpInside];
+    [preview.view addSubview:colorButton];
+    [NSLayoutConstraint activateConstraints:@[
+        [imageView.centerXAnchor constraintEqualToAnchor:preview.view.centerXAnchor],
+        [imageView.centerYAnchor constraintEqualToAnchor:preview.view.centerYAnchor constant:-24],
+        [imageView.widthAnchor constraintEqualToConstant:120],
+        [imageView.heightAnchor constraintEqualToConstant:120],
+        [colorButton.topAnchor constraintEqualToAnchor:imageView.bottomAnchor constant:24],
+        [colorButton.centerXAnchor constraintEqualToAnchor:preview.view.centerXAnchor]
+    ]];
+    self.cursorPreviewImageView = imageView;
+    self.cursorPreviewController = preview;
+    [self refreshCursorPreview];
+    preview.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(closeCursorPreview)];
+    UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:preview];
+    navigation.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:navigation animated:YES completion:nil];
+}
+
+- (void)closeCursorPreview {
+    [self.cursorPreviewController.navigationController dismissViewControllerAnimated:YES completion:nil];
+}
+
 - (void)colorPickerViewControllerDidSelectColor:(UIColorPickerViewController *)viewController {
     CGFloat red, green, blue, alpha;
     if (![viewController.selectedColor getRed:&red green:&green blue:&blue alpha:&alpha]) return;
@@ -62,6 +119,7 @@
     setPrefObject(@"control.mouse_cursor_color", hex);
     setPrefObject(@"control.mouse_cursor_style", @"custom");
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
+    [self refreshCursorPreview];
 }
 
 - (void)exportLauncherConfiguration {
@@ -84,11 +142,65 @@
 }
 
 - (void)importMouseCursorImage {
-    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.image"]] asCopy:YES];
-    picker.delegate = self;
-    picker.allowsMultipleSelection = NO;
-    picker.modalPresentationStyle = UIModalPresentationFormSheet;
-    [self presentViewController:picker animated:YES completion:nil];
+    UIAlertController *sourcePicker = [UIAlertController alertControllerWithTitle:localize(@"preference.title.mouse_cursor_image", nil) message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    [sourcePicker addAction:[UIAlertAction actionWithTitle:localize(@"preference.title.import_photo_library", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        PHPickerConfiguration *configuration = [PHPickerConfiguration new];
+        configuration.filter = PHPickerFilter.imagesFilter;
+        configuration.selectionLimit = 1;
+        PHPickerViewController *picker = [[PHPickerViewController alloc] initWithConfiguration:configuration];
+        picker.delegate = self;
+        [self presentViewController:picker animated:YES completion:nil];
+    }]];
+    [sourcePicker addAction:[UIAlertAction actionWithTitle:localize(@"preference.title.import_files", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.image] asCopy:YES];
+        picker.delegate = self;
+        picker.allowsMultipleSelection = NO;
+        picker.modalPresentationStyle = UIModalPresentationFormSheet;
+        [self presentViewController:picker animated:YES completion:nil];
+    }]];
+    [sourcePicker addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:nil]];
+    sourcePicker.popoverPresentationController.sourceView = self.view;
+    sourcePicker.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds), 1, 1);
+    [self presentViewController:sourcePicker animated:YES completion:nil];
+}
+
+- (void)saveCursorImageData:(NSData *)data extension:(NSString *)extension {
+    const char *home = getenv("AME_HOME");
+    if (!home || !data.length) {
+        showDialog(localize(@"Error", nil), @"Could not access the Amethyst data directory or selected image.");
+        return;
+    }
+    NSString *destination = [NSString stringWithFormat:@"%s/custom_mouse_cursor.%@", home, extension];
+    NSError *error = nil;
+    NSString *oldPath = getPrefObject(@"control.mouse_cursor_image");
+    if (oldPath.length && [NSFileManager.defaultManager fileExistsAtPath:oldPath]) [NSFileManager.defaultManager removeItemAtPath:oldPath error:nil];
+    if (![data writeToFile:destination options:NSDataWritingAtomic error:&error]) {
+        showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not save the selected image.");
+        return;
+    }
+    setPrefObject(@"control.mouse_cursor_image", destination);
+    setPrefObject(@"control.mouse_cursor_style", @"custom");
+    setPrefObject(@"control.mouse_cursor_shape", @"image");
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
+    [self refreshCursorPreview];
+    showDialog(@"Cursor image imported", @"Your image will be used as the custom mouse cursor.");
+    [self.tableView reloadData];
+}
+
+- (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    NSItemProvider *provider = results.firstObject.itemProvider;
+    if (![provider canLoadObjectOfClass:UIImage.class]) return;
+    [provider loadObjectOfClass:UIImage.class completionHandler:^(UIImage *image, NSError *error) {
+        NSData *data = image ? UIImagePNGRepresentation(image) : nil;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error || !data) {
+                showDialog(localize(@"Error", nil), error.localizedDescription ?: @"Could not load the selected photo.");
+                return;
+            }
+            [self saveCursorImageData:data extension:@"png"];
+        });
+    }];
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
@@ -102,23 +214,12 @@
         return;
     }
 
-    NSString *destination = [NSString stringWithFormat:@"%s/custom_mouse_cursor.%@", getenv("AME_HOME"), extension];
-    NSFileManager *fileManager = NSFileManager.defaultManager;
-    NSError *error = nil;
-    if ([fileManager fileExistsAtPath:destination]) {
-        [fileManager removeItemAtPath:destination error:nil];
-    }
-    if (![fileManager copyItemAtURL:source toURL:[NSURL fileURLWithPath:destination] error:&error]) {
-        showDialog(localize(@"Error", nil), error.localizedDescription);
+    NSData *imageData = [NSData dataWithContentsOfURL:source];
+    if (!imageData) {
+        showDialog(localize(@"Error", nil), @"Could not read the selected image.");
         return;
     }
-
-    setPrefObject(@"control.mouse_cursor_image", destination);
-    setPrefObject(@"control.mouse_cursor_style", @"custom");
-    setPrefObject(@"control.mouse_cursor_shape", @"image");
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
-    showDialog(@"Cursor image imported", @"Your image will be used as the custom mouse cursor.");
-    [self.tableView reloadData];
+    [self saveCursorImageData:imageData extension:extension];
 }
 
 - (id)init {
@@ -464,20 +565,16 @@
                 }
             },
             @{@"key": @"mouse_cursor_color",
-                @"hasDetail": @YES,
                 @"icon": @"paintpalette",
-                @"type": self.typePickField,
-                @"pickKeys": @[@"white", @"black", @"red", @"blue", @"green", @"yellow", @"orange", @"purple", @"pink", @"cyan", @"magenta"],
-                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow", @"Orange", @"Purple", @"Pink", @"Cyan", @"Magenta"],
-                @"action": ^void(NSString *color) {
-                    self.setPreference(@"control", @"mouse_cursor_style", @"custom");
-                }
-            },
-            @{@"key": @"mouse_cursor_custom_color",
-                @"icon": @"eyedropper",
                 @"type": self.typeButton,
                 @"suppressDoneAlert": @YES,
                 @"action": ^void(){ [self chooseMouseCursorColor]; }
+            },
+            @{@"key": @"mouse_cursor_preview",
+                @"icon": @"eye",
+                @"type": self.typeButton,
+                @"suppressDoneAlert": @YES,
+                @"action": ^void(){ [self showCursorPreview]; }
             },
             @{@"key": @"mouse_cursor_hotspot",
                 @"hasDetail": @YES,
