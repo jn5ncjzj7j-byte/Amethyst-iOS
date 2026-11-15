@@ -75,8 +75,9 @@ static GameSurfaceView* pojavWindow;
 - (void)updateVirtualMouseAppearance {
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
     if (!style.length || [style isEqualToString:@"minecraft"]) {
-        [self updateVirtualMouseAppearance];
+        self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
         self.mousePointerView.tintColor = nil;
+        self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
         return;
     }
 
@@ -88,6 +89,17 @@ static GameSurfaceView* pojavWindow;
         symbol = @"circle.fill";
     } else if ([shape isEqualToString:@"hand"]) {
         symbol = @"hand.point.up.left.fill";
+    }
+
+    if ([shape isEqualToString:@"image"]) {
+        NSString *imagePath = getPrefObject(@"control.mouse_cursor_image");
+        UIImage *customImage = imagePath.length ? [UIImage imageWithContentsOfFile:imagePath] : nil;
+        if (customImage) {
+            self.mousePointerView.image = customImage;
+            self.mousePointerView.tintColor = nil;
+            self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
+            return;
+        }
     }
 
     NSString *color = getPrefObject(@"control.mouse_cursor_color");
