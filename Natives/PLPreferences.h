@@ -12,5 +12,7 @@
 - (id)getObject:(NSString *)key;
 - (BOOL)setObject:(NSString *)key value:(id)value;
 - (void)reset;
+- (void)saveGlobalPref;
+- (void)saveInstancePref;
 
 @end
