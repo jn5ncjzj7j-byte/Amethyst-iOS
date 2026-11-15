@@ -140,7 +140,7 @@
     // Set general properties
     BOOL destructive = [item[@"destructive"] boolValue];
     cell.imageView.tintColor = destructive ? UIColor.systemRedColor : nil;
-    cell.imageView.image = [UIImage systemImageNamed:item[@"icon"]];
+    cell.imageView.image = [item[@"icon"] isEqualToString:@"ImportContent"] ? [UIImage imageNamed:@"ImportContent"] : [UIImage systemImageNamed:item[@"icon"]];
     
     if (cellStyle != UITableViewCellStyleValue1) {
         cell.detailTextLabel.text = nil;
