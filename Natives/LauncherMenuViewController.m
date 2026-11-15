@@ -243,7 +243,13 @@
             self.lastSelectedIndex = indexPath.row;
         }
         selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
-        selected.vcArray[0].navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
+        if ([selected.vcArray[0] isKindOfClass:ModrinthModsViewController.class]) {
+            UIBarButtonItem *importItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"plus"] style:UIBarButtonItemStylePlain target:selected.vcArray[0] action:@selector(importLocalFile)];
+            importItem.accessibilityLabel = @"Import file";
+            selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem, importItem];
+        } else {
+            selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem];
+        }
         selected.vcArray[0].navigationItem.leftItemsSupplementBackButton = true;
     }
 }
