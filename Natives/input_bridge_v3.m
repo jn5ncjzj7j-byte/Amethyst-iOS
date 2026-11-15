@@ -297,6 +297,21 @@ void ensureGLFWBridge() {
     vmGlfwClass = (*env)->NewGlobalRef(env, localGlfwClass);
 
     jclass callbackBridgeClass = (*env)->FindClass(env, "org/lwjgl/glfw/CallbackBridge");
+    if (callbackBridgeClass == NULL) {
+        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+        jclass classLoaderClass = (*env)->FindClass(env, "java/lang/ClassLoader");
+        jclass classClass = (*env)->FindClass(env, "java/lang/Class");
+        if (classLoaderClass != NULL && classClass != NULL) {
+            jmethodID getSystemClassLoader = (*env)->GetStaticMethodID(env, classLoaderClass, "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
+            jobject systemClassLoader = getSystemClassLoader ? (*env)->CallStaticObjectMethod(env, classLoaderClass, getSystemClassLoader) : NULL;
+            jmethodID forName = (*env)->GetStaticMethodID(env, classClass, "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+            jstring className = (*env)->NewStringUTF(env, "org.lwjgl.glfw.CallbackBridge");
+            if (systemClassLoader != NULL && forName != NULL && className != NULL) {
+                callbackBridgeClass = (jclass)(*env)->CallStaticObjectMethod(env, classClass, forName, className, JNI_FALSE, systemClassLoader);
+            }
+        }
+        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+    }
     if (callbackBridgeClass != NULL) {
         JNINativeMethod frameMethods[] = {
             {"nativeOnFramePresented", "()V", (void *)&CallbackBridge_nativeOnFramePresented}
@@ -305,8 +320,8 @@ void ensureGLFWBridge() {
             if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
             NSLog(@"JNI_OnLoadGLFW: Failed to register frame counter callback");
         }
-    } else if ((*env)->ExceptionOccurred(env)) {
-        (*env)->ExceptionClear(env);
+    } else {
+        NSLog(@"JNI_OnLoadGLFW: CallbackBridge class unavailable for FPS callback");
     }
 
     method_internalWindowSizeChanged = (*env)->GetStaticMethodID(env, vmGlfwClass, "internalWindowSizeChanged", "(JII)V");
