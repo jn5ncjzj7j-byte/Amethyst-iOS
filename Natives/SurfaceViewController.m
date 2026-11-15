@@ -72,6 +72,43 @@ static GameSurfaceView* pojavWindow;
     return self;
 }
 
+- (void)updateVirtualMouseAppearance {
+    NSString *style = getPrefObject(@"control.mouse_cursor_style");
+    if (!style.length || [style isEqualToString:@"minecraft"]) {
+        [self updateVirtualMouseAppearance];
+        self.mousePointerView.tintColor = nil;
+        return;
+    }
+
+    NSString *shape = getPrefObject(@"control.mouse_cursor_shape");
+    NSString *symbol = @"arrow.up.left";
+    if ([shape isEqualToString:@"crosshair"]) {
+        symbol = @"scope";
+    } else if ([shape isEqualToString:@"circle"]) {
+        symbol = @"circle.fill";
+    } else if ([shape isEqualToString:@"hand"]) {
+        symbol = @"hand.point.up.left.fill";
+    }
+
+    NSString *color = getPrefObject(@"control.mouse_cursor_color");
+    UIColor *tint = UIColor.whiteColor;
+    if ([color isEqualToString:@"black"]) {
+        tint = UIColor.blackColor;
+    } else if ([color isEqualToString:@"red"]) {
+        tint = UIColor.systemRedColor;
+    } else if ([color isEqualToString:@"blue"]) {
+        tint = UIColor.systemBlueColor;
+    } else if ([color isEqualToString:@"green"]) {
+        tint = UIColor.systemGreenColor;
+    } else if ([color isEqualToString:@"yellow"]) {
+        tint = UIColor.systemYellowColor;
+    }
+
+    self.mousePointerView.image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    self.mousePointerView.tintColor = tint;
+    self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -334,6 +371,7 @@ static GameSurfaceView* pojavWindow;
     CGFloat mouseScale = getPrefFloat(@"control.mouse_scale") / 100.0;
     virtualMouseFrame = CGRectMake(self.view.frame.size.width / 2, self.view.frame.size.height / 2, 18.0 * mouseScale, 27 * mouseScale);
     self.mousePointerView.frame = virtualMouseFrame;
+    [self updateVirtualMouseAppearance];
 
     self.shouldHideControlsFromRecording = getPrefFloat(@"control.recording_hide");
     [self.ctrlView hideViewFromCapture:self.shouldHideControlsFromRecording];
