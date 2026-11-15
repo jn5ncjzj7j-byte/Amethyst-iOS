@@ -50,6 +50,27 @@ void setPrefInt(NSString *key, NSInteger value) {
     setPrefObject(key, @(value));
 }
 
+NSDictionary *getLauncherConfigForExport(void) {
+    NSMutableDictionary *config = [@{
+        @"format": @"Amethyst Launcher Configuration",
+        @"format_version": @1,
+        @"exported_at": [[NSISO8601DateFormatter new] stringFromDate:NSDate.date],
+        @"global_preferences": pref.globalPref ?: @{}
+    } mutableCopy];
+    if (pref.instancePref) {
+        config[@"active_profile_preferences"] = pref.instancePref;
+    }
+    NSString *imagePath = getPrefObject(@"control.mouse_cursor_image");
+    NSData *imageData = imagePath.length ? [NSData dataWithContentsOfFile:imagePath] : nil;
+    if (imageData) {
+        config[@"custom_cursor_image"] = @{
+            @"filename": imagePath.lastPathComponent,
+            @"base64": [imageData base64EncodedStringWithOptions:0]
+        };
+    }
+    return config;
+}
+
 void resetWarnings() {
     for (int i = 0; i < pref.globalPref[@"warnings"].count; i++) {
         NSString *key = pref.globalPref[@"warnings"].allKeys[i];
