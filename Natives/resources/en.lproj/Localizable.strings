@@ -496,3 +496,10 @@
 "content.version.beta" = "Beta";
 "content.version.alpha" = "Alpha";
 "content.version.recommended" = "Recommended";
+
+"preference.title.mouse_cursor_style" = "Cursor style";
+"preference.detail.mouse_cursor_style" = "Choose the Minecraft arrow or a customizable pointer."; 
+"preference.title.mouse_cursor_shape" = "Custom cursor shape";
+"preference.detail.mouse_cursor_shape" = "Choose the shape used by the custom pointer."; 
+"preference.title.mouse_cursor_color" = "Custom cursor color";
+"preference.detail.mouse_cursor_color" = "Choose the color used by the custom pointer."; 
