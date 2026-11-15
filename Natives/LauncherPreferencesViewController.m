@@ -328,6 +328,27 @@
                 @"icon": @"cursorarrow.rays",
                 @"type": self.typeSwitch
             },
+            @{@"key": @"mouse_cursor_style",
+                @"hasDetail": @YES,
+                @"icon": @"cursorarrow",
+                @"type": self.typePickField,
+                @"pickKeys": @[@"minecraft", @"custom"],
+                @"pickList": @[@"Minecraft-style arrow", @"Custom pointer"]
+            },
+            @{@"key": @"mouse_cursor_shape",
+                @"hasDetail": @YES,
+                @"icon": @"cursorarrow.motionlines",
+                @"type": self.typePickField,
+                @"pickKeys": @[@"arrow", @"crosshair", @"circle", @"hand"],
+                @"pickList": @[@"Arrow", @"Crosshair", @"Circle", @"Hand"]
+            },
+            @{@"key": @"mouse_cursor_color",
+                @"hasDetail": @YES,
+                @"icon": @"paintpalette",
+                @"type": self.typePickField,
+                @"pickKeys": @[@"white", @"black", @"red", @"blue", @"green", @"yellow"],
+                @"pickList": @[@"White", @"Black", @"Red", @"Blue", @"Green", @"Yellow"]
+            },
             @{@"key": @"gyroscope_enable",
                 @"hasDetail": @YES,
                 @"icon": @"gyroscope",
