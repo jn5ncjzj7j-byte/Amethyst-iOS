@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <PhotosUI/PhotosUI.h>
+#import <CoreText/CoreText.h>
+#import <objc/runtime.h>
 
 #import "DBNumberedSlider.h"
 #import "HostManagerBridge.h"
@@ -22,7 +24,83 @@
 @property(nonatomic, weak) UIImageView *cursorPreviewImageView;
 @property(nonatomic, weak) UIViewController *cursorPreviewController;
 @property(nonatomic) BOOL importingLauncherConfiguration;
+@property(nonatomic) BOOL importingLauncherFont;
 @end
+
+@interface UILabel (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UILabel (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+@interface UITextField (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UITextField (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+@interface UITextView (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UITextView (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+static void AmethystApplyLauncherFontToView(UIView *view) {
+    if ([view isKindOfClass:UILabel.class]) {
+        UILabel *label = (UILabel *)view;
+        label.font = label.font;
+    } else if ([view isKindOfClass:UITextField.class]) {
+        UITextField *field = (UITextField *)view;
+        field.font = field.font;
+    } else if ([view isKindOfClass:UITextView.class]) {
+        UITextView *textView = (UITextView *)view;
+        textView.font = textView.font;
+    }
+    for (UIView *subview in view.subviews) AmethystApplyLauncherFontToView(subview);
+}
+
+static void AmethystRefreshLauncherFont(void) {
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class]) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) AmethystApplyLauncherFontToView(window);
+    }
+}
 
 @implementation LauncherPreferencesViewController
 
@@ -171,6 +249,23 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
+- (void)importLauncherFont {
+    self.importingLauncherFont = YES;
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.font"]] asCopy:YES];
+    picker.delegate = self;
+    picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)resetLauncherFont {
+    setPrefObject(@"general.launcher_font_name", nil);
+    setPrefObject(@"general.launcher_font_path", nil);
+    AmethystRefreshLauncherFont();
+    showDialog(@"Launcher font reset", @"The launcher is now using its default font.");
+    [self.tableView reloadData];
+}
+
 - (void)importMouseCursorImage {
     UIAlertController *sourcePicker = [UIAlertController alertControllerWithTitle:localize(@"preference.title.mouse_cursor_image", nil) message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [sourcePicker addAction:[UIAlertAction actionWithTitle:localize(@"preference.title.import_photo_library", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
@@ -235,6 +330,7 @@
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
     self.importingLauncherConfiguration = NO;
+    self.importingLauncherFont = NO;
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
@@ -252,6 +348,60 @@
         [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
         [self.tableView reloadData];
         showDialog(localize(@"preference.title.import_launcher_config", nil), @"Launcher settings and touch-control layouts were imported.");
+        return;
+    }
+    if (self.importingLauncherFont) {
+        self.importingLauncherFont = NO;
+        if (!source) return;
+        NSString *extension = source.pathExtension.lowercaseString;
+        if (![@[@"ttf", @"otf", @"ttc"] containsObject:extension]) {
+            showDialog(localize(@"Error", nil), @"Choose a TTF, OTF, or TTC font file.");
+            return;
+        }
+        BOOL accessing = [source startAccessingSecurityScopedResource];
+        NSData *fontData = [NSData dataWithContentsOfURL:source];
+        if (accessing) [source stopAccessingSecurityScopedResource];
+        const char *home = getenv("AME_HOME");
+        if (!fontData.length || !home) {
+            showDialog(localize(@"Error", nil), @"Could not read the selected font file.");
+            return;
+        }
+        NSString *filename = [NSString stringWithFormat:@"launcher-font-%@.%@", NSUUID.UUID.UUIDString, extension];
+        NSString *destination = [NSString stringWithFormat:@"%s/%@", home, filename];
+        NSError *writeError = nil;
+        if (![fontData writeToFile:destination options:NSDataWritingAtomic error:&writeError]) {
+            showDialog(localize(@"Error", nil), writeError.localizedDescription ?: @"Could not save the font file.");
+            return;
+        }
+        NSURL *fontURL = [NSURL fileURLWithPath:destination];
+        CFErrorRef registrationError = NULL;
+        if (!CTFontManagerRegisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, &registrationError)) {
+            NSString *message = registrationError ? [(__bridge NSError *)registrationError localizedDescription] : @"The selected file is not a supported font.";
+            if (registrationError) CFRelease(registrationError);
+            [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
+            showDialog(localize(@"Error", nil), message);
+            return;
+        }
+        CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
+        NSString *fontName = nil;
+        if (descriptors && CFArrayGetCount(descriptors) > 0) {
+            CTFontDescriptorRef descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(descriptors, 0);
+            CFStringRef name = CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute);
+            if (name) {
+                fontName = [(__bridge NSString *)name copy];
+                CFRelease(name);
+            }
+        }
+        if (descriptors) CFRelease(descriptors);
+        if (!fontName.length || ![UIFont fontWithName:fontName size:16]) {
+            showDialog(localize(@"Error", nil), @"The font was imported, but iOS could not activate it.");
+            return;
+        }
+        setPrefObject(@"general.launcher_font_name", fontName);
+        setPrefObject(@"general.launcher_font_path", destination);
+        AmethystRefreshLauncherFont();
+        [self.tableView reloadData];
+        showDialog(@"Launcher font imported", [NSString stringWithFormat:@"%@ is now used in the launcher.", fontName]);
         return;
     }
     if (!source) return;
@@ -336,6 +486,20 @@
                   debugLogEnabled = enabled;
                   NSLog(@"[Debugging] Debug log enabled: %@", enabled ? @"YES" : @"NO");
               }
+            },
+            @{@"key": @"launcher_font_import",
+              @"title": @"Import Launcher Font",
+              @"icon": @"textformat",
+              @"type": self.typeButton,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self importLauncherFont]; }
+            },
+            @{@"key": @"launcher_font_reset",
+              @"title": @"Reset Launcher Font",
+              @"icon": @"textformat.abc",
+              @"type": self.typeButton,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self resetLauncherFont]; }
             },
             @{@"key": @"appicon",
               @"hasDetail": @YES,
