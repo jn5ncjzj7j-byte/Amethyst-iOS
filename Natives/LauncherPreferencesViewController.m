@@ -570,7 +570,7 @@
                 @"pickList": @[@"Minecraft-style arrow", @"Custom pointer"]
             },
             @{@"key": @"mouse_cursor_image",
-                @"icon": @"ImportContent",
+                @"icon": @"photo.badge.plus",
                 @"type": self.typeButton,
                 @"action": ^void(){
                     [self importMouseCursorImage];
