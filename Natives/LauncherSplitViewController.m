@@ -8,7 +8,7 @@
 
 extern NSMutableDictionary *prefDict;
 
-@interface LauncherSplitViewController ()<UISplitViewControllerDelegate>{
+@interface LauncherSplitViewController ()<UISplitViewControllerDelegate, UIPointerInteractionDelegate>{
 }
 @end
 
@@ -22,6 +22,8 @@ extern NSMutableDictionary *prefDict;
     }
 
     self.delegate = self;
+    UIPointerInteraction *systemPointerInteraction = [[UIPointerInteraction alloc] initWithDelegate:self];
+    [self.view addInteraction:systemPointerInteraction];
 
     UINavigationController *masterVc = [[UINavigationController alloc] initWithRootViewController:[[LauncherMenuViewController alloc] init]];
     LauncherNavigationController *detailVc = [[LauncherNavigationController alloc] initWithRootViewController:[[LauncherProfilesViewController alloc] init]];
@@ -47,6 +49,10 @@ extern NSMutableDictionary *prefDict;
     self.launcherMousePointerView.hidden = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(refreshLauncherMousePointerAppearance) name:@"AmethystMouseCursorAppearanceDidChange" object:nil];
     [self refreshLauncherMousePointerAppearance];
+}
+
+- (UIPointerStyle *)pointerInteraction:(UIPointerInteraction *)interaction styleForRegion:(UIPointerRegion *)region {
+    return [UIPointerStyle hiddenPointerStyle];
 }
 
 - (void)splitViewController:(UISplitViewController *)svc willChangeToDisplayMode:(UISplitViewControllerDisplayMode)displayMode {
