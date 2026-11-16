@@ -1125,8 +1125,17 @@ public class GLFW
         invokePV(window, __functionAddress);
     }
 
+    private static volatile boolean frameCallbackUnavailable;
+
     public static void glfwSwapBuffers(@NativeType("GLFWwindow *") long window) {
-        CallbackBridge.nativeOnFramePresented();
+        if (!frameCallbackUnavailable) {
+            try {
+                CallbackBridge.nativeOnFramePresented();
+            } catch (UnsatisfiedLinkError error) {
+                frameCallbackUnavailable = true;
+                Log.e("Amethyst", "Native frame counter callback unavailable; continuing without FPS frame counting", error);
+            }
+        }
         long __functionAddress = Functions.SwapBuffers;
         invokePV(window, __functionAddress);
     }
