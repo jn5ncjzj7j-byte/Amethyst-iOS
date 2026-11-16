@@ -30,6 +30,8 @@ static PFN_queuePresent realQueuePresent;
 
 extern void amethystRecordRenderedFrame(void);
 
+static void ensureDriver(void);
+
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
     VkResult result = realQueuePresent(queue, presentInfo);
@@ -39,9 +41,6 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
 
 VK_EXPORT PFN_voidFunction vkGetDeviceProcAddr(void *device, const char *name) {
     ensureDriver();
-    if (!realGetDeviceProcAddr && realGetInstanceProcAddr) {
-        realGetDeviceProcAddr = (PFN_getDeviceProcAddr)(uintptr_t)realGetInstanceProcAddr(NULL, "vkGetDeviceProcAddr");
-    }
     if (!realGetDeviceProcAddr) return NULL;
     PFN_voidFunction fn = realGetDeviceProcAddr(device, name);
     if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
@@ -123,8 +122,12 @@ VK_EXPORT VkResult vkEnumerateDeviceLayerProperties(void *physicalDevice, uint32
 VK_EXPORT PFN_voidFunction vkGetInstanceProcAddr(void *instance, const char *name) {
     ensureDriver();
     if (!name) return NULL;
-    if (!strcmp(name, "vkGetDeviceProcAddr"))
+    if (!strcmp(name, "vkGetDeviceProcAddr")) {
+        if (realGetInstanceProcAddr) {
+            realGetDeviceProcAddr = (PFN_getDeviceProcAddr)(uintptr_t)realGetInstanceProcAddr(instance, name);
+        }
         return (PFN_voidFunction)vkGetDeviceProcAddr;
+    }
     if (!strcmp(name, "vkEnumerateInstanceLayerProperties"))
         return (PFN_voidFunction)vkEnumerateInstanceLayerProperties;
     if (!strcmp(name, "vkEnumerateDeviceLayerProperties"))
