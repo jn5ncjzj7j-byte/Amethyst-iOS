@@ -88,7 +88,11 @@ static void ensureDriver(void) {
 VK_EXPORT VkResult vkCreateInstance(const void *createInfo, const void *allocator, void **instance) {
     ensureDriver();
     if (!realCreateInstance) return VK_ERROR_INITIALIZATION_FAILED;
-    return realCreateInstance(createInfo, allocator, instance);
+    VkResult result = realCreateInstance(createInfo, allocator, instance);
+    if (result == VK_SUCCESS && instance && *instance && realGetInstanceProcAddr) {
+        realGetDeviceProcAddr = (PFN_getDeviceProcAddr)(uintptr_t)realGetInstanceProcAddr(*instance, "vkGetDeviceProcAddr");
+    }
+    return result;
 }
 
 VK_EXPORT VkResult vkEnumerateInstanceVersion(uint32_t *apiVersion) {
