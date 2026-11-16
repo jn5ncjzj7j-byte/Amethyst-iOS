@@ -8,6 +8,27 @@
 
 extern NSMutableDictionary *prefDict;
 
+static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloat borderWidth) {
+    if (!image || borderWidth <= 0.0) return image;
+    UIImage *foreground = image;
+    if (image.renderingMode == UIImageRenderingModeAlwaysTemplate && tintColor) {
+        foreground = [image imageWithTintColor:tintColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    }
+    UIImage *outline = [foreground imageWithTintColor:UIColor.blackColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    CGFloat scale = foreground.scale > 0.0 ? foreground.scale : UIScreen.mainScreen.scale;
+    CGSize outputSize = CGSizeMake(foreground.size.width + borderWidth * 2.0, foreground.size.height + borderWidth * 2.0);
+    UIGraphicsBeginImageContextWithOptions(outputSize, NO, scale);
+    for (NSInteger x = -1; x <= 1; x++) {
+        for (NSInteger y = -1; y <= 1; y++) {
+            if (x == 0 && y == 0) continue;
+            [outline drawAtPoint:CGPointMake(borderWidth + x * borderWidth, borderWidth + y * borderWidth)];
+        }
+    }
+    [foreground drawAtPoint:CGPointMake(borderWidth, borderWidth)];
+    UIImage *result = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return [result imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+}
 @interface LauncherSplitViewController ()<UISplitViewControllerDelegate, UIPointerInteractionDelegate>{
 }
 @end
@@ -102,8 +123,11 @@ extern NSMutableDictionary *prefDict;
     };
     UIColor *tint = namedColors[color] ?: UIColor.whiteColor;
     UIImage *image = nil;
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat outlineWidth = radiusPreference && [radiusPreference doubleValue] > 0.0 ? 1.0 : 0.0;
     if ([style isEqualToString:@"minecraft"]) {
         image = [UIImage imageNamed:@"MousePointer"];
+        image = AMOutlinedCursorImage(image, nil, outlineWidth);
     } else if ([shape isEqualToString:@"image"]) {
         NSString *path = getPrefObject(@"control.mouse_cursor_image");
         image = path.length ? [UIImage imageWithContentsOfFile:path] : nil;
@@ -129,8 +153,11 @@ extern NSMutableDictionary *prefDict;
         else if ([shape isEqualToString:@"hand"]) symbol = @"hand.point.up.left.fill";
         image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     }
+    if (![shape isEqualToString:@"crosshair"] && ![style isEqualToString:@"minecraft"]) {
+        image = AMOutlinedCursorImage(image, [shape isEqualToString:@"image"] ? nil : tint, outlineWidth);
+    }
     self.launcherMousePointerView.image = image;
-    self.launcherMousePointerView.tintColor = ([shape isEqualToString:@"crosshair"] || [shape isEqualToString:@"image"] || [style isEqualToString:@"minecraft"]) ? nil : tint;
+    self.launcherMousePointerView.tintColor = nil;
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
