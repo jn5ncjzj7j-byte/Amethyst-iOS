@@ -35,7 +35,10 @@ static void ensureDriver(void);
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
     VkResult result = realQueuePresent(queue, presentInfo);
-    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {\n        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");\n        if (recordFrame) recordFrame();\n    }
+    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
+        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");
+        if (recordFrame) recordFrame();
+    }
     return result;
 }
 
