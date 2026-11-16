@@ -369,7 +369,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         NSLog(@"Input: Mouse connected!");
         GCMouse* mouse = note.object;
         [self registerMouseCallbacks:mouse];
-        self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+        self.mousePointerView.hidden = !virtualMouseEnabled;
         [self setNeedsUpdateOfPrefersPointerLocked];
     }];
     self.mouseDisconnectCallback = [[NSNotificationCenter defaultCenter] addObserverForName:GCMouseDidDisconnectNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
@@ -396,7 +396,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         GCController* controller = note.object;
         [ControllerInput initKeycodeTable];
         [ControllerInput registerControllerCallbacks:controller];
-        self.mousePointerView.hidden = isGrabbing;
+        self.mousePointerView.hidden = !virtualMouseEnabled;
         virtualMouseEnabled = YES;
         if (getPrefBool(@"control.hardware_hide")) {
             self.ctrlView.hidden = YES;
@@ -706,6 +706,16 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     return touch == nil || touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled;
 }
 
+- (void)moveVirtualMouseByDeltaX:(CGFloat)deltaX deltaY:(CGFloat)deltaY {
+    if (!virtualMouseEnabled) return;
+    virtualMouseFrame.origin.x += deltaX * self.mouseSpeed;
+    virtualMouseFrame.origin.y += deltaY * self.mouseSpeed;
+    CGPoint hotspot = [self virtualMouseHotspotOffset];
+    virtualMouseFrame.origin.x = clamp(virtualMouseFrame.origin.x, 0, MAX(0, self.surfaceView.frame.size.width - hotspot.x));
+    virtualMouseFrame.origin.y = clamp(virtualMouseFrame.origin.y, 0, MAX(0, self.surfaceView.frame.size.height - hotspot.y));
+    self.mousePointerView.frame = virtualMouseFrame;
+}
+
 - (void)sendTouchPoint:(CGPoint)location withEvent:(int)event
 {
     CGFloat screenScale = self.screenScale;
@@ -863,12 +873,16 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
             return;
         }
         CGPoint delta = CGPointMake(deltaX, -deltaY);
-        if (NSThread.isMainThread) {
+        void (^handleMovement)(void) = ^{
+            if (isGrabbing && virtualMouseEnabled) {
+                [self moveVirtualMouseByDeltaX:delta.x deltaY:delta.y];
+            }
             [self sendTouchPoint:delta withEvent:ACTION_MOVE_MOTION];
+        };
+        if (NSThread.isMainThread) {
+            handleMovement();
         } else {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self sendTouchPoint:delta withEvent:ACTION_MOVE_MOTION];
-            });
+            dispatch_async(dispatch_get_main_queue(), handleMovement);
         }
     };
 
