@@ -3,6 +3,8 @@
 
 #include <dlfcn.h>
 #include <stdatomic.h>
+
+extern void amethystRecordRenderedFrame(void);
 #include "environ.h"
 #include "utils.h"
 
@@ -84,6 +86,7 @@ void osm_swap_buffers() {
     if (!currentBundle) return;
     osm_apply_current_ll();
     if (atomic_exchange(&osm_frame_pending, true)) return;
+    amethystRecordRenderedFrame();
     handle.glFinish(); // this will force osmesa to write the last rendered image into the buffer
     osm_render_window_t bundle = currentBundle->osm;
     dispatch_async(dispatch_get_main_queue(), ^{
