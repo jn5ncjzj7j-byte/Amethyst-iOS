@@ -296,29 +296,37 @@ void ensureGLFWBridge() {
     }
     vmGlfwClass = (*env)->NewGlobalRef(env, localGlfwClass);
 
-    jclass callbackBridgeClass = (*env)->FindClass(env, "org/lwjgl/glfw/CallbackBridge");
-    if (callbackBridgeClass == NULL) {
-        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
-        jclass classLoaderClass = (*env)->FindClass(env, "java/lang/ClassLoader");
-        jclass classClass = (*env)->FindClass(env, "java/lang/Class");
-        if (classLoaderClass != NULL && classClass != NULL) {
-            jmethodID getSystemClassLoader = (*env)->GetStaticMethodID(env, classLoaderClass, "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
-            jobject systemClassLoader = getSystemClassLoader ? (*env)->CallStaticObjectMethod(env, classLoaderClass, getSystemClassLoader) : NULL;
-            jmethodID forName = (*env)->GetStaticMethodID(env, classClass, "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
-            jstring className = (*env)->NewStringUTF(env, "org.lwjgl.glfw.CallbackBridge");
-            if (systemClassLoader != NULL && forName != NULL && className != NULL) {
-                callbackBridgeClass = (jclass)(*env)->CallStaticObjectMethod(env, classClass, forName, className, JNI_FALSE, systemClassLoader);
-            }
+    jclass callbackBridgeClass = NULL;
+    jclass classClass = (*env)->FindClass(env, "java/lang/Class");
+    if (classClass != NULL) {
+        jmethodID getClassLoader = (*env)->GetMethodID(env, classClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
+        jmethodID forName = (*env)->GetStaticMethodID(env, classClass, "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+        jobject glfwClassLoader = getClassLoader ? (*env)->CallObjectMethod(env, vmGlfwClass, getClassLoader) : NULL;
+        jstring className = (*env)->NewStringUTF(env, "org.lwjgl.glfw.CallbackBridge");
+        if (forName != NULL && className != NULL) {
+            callbackBridgeClass = (jclass)(*env)->CallStaticObjectMethod(env, classClass, forName, className, JNI_FALSE, glfwClassLoader);
         }
-        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+        logPendingException(env, "JNI_OnLoadGLFW: resolving CallbackBridge with GLFW classloader failed");
+    } else {
+        logPendingException(env, "JNI_OnLoadGLFW: resolving java.lang.Class failed");
+    }
+    if (callbackBridgeClass == NULL) {
+        jclass localCallbackBridge = (*env)->FindClass(env, "org/lwjgl/glfw/CallbackBridge");
+        if (localCallbackBridge != NULL) {
+            callbackBridgeClass = (jclass)(*env)->NewLocalRef(env, localCallbackBridge);
+        }
+        logPendingException(env, "JNI_OnLoadGLFW: fallback FindClass(CallbackBridge) failed");
     }
     if (callbackBridgeClass != NULL) {
         JNINativeMethod frameMethods[] = {
             {"nativeOnFramePresented", "()V", (void *)&CallbackBridge_nativeOnFramePresented}
         };
-        if ((*env)->RegisterNatives(env, callbackBridgeClass, frameMethods, 1) != JNI_OK) {
-            if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
-            NSLog(@"JNI_OnLoadGLFW: Failed to register frame counter callback");
+        jint registrationResult = (*env)->RegisterNatives(env, callbackBridgeClass, frameMethods, 1);
+        if (registrationResult != JNI_OK) {
+            logPendingException(env, "JNI_OnLoadGLFW: RegisterNatives(nativeOnFramePresented) failed");
+            NSLog(@"JNI_OnLoadGLFW: Failed to register frame counter callback (result=%d)", registrationResult);
+        } else {
+            NSLog(@"JNI_OnLoadGLFW: Registered frame counter callback");
         }
     } else {
         NSLog(@"JNI_OnLoadGLFW: CallbackBridge class unavailable for FPS callback");
