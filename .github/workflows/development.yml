@@ -1,5 +1,7 @@
 name: Development build
 
+# Build Misg Rendered from the feature branch
+
 # Manual development builds package one iOS IPA with solid crosshair geometry.
 
 on:

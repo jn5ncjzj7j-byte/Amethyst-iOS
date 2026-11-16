@@ -517,3 +517,5 @@
 "preference.title.import_content" = "Import";
 
 "preference.title.import_launcher_config" = "Import launcher backup";
+"preference.title.mouse_cursor_corner_radius" = "Cursor outline roundness";
+"preference.detail.mouse_cursor_corner_radius" = "Adjust how rounded the custom cursor outline looks.";

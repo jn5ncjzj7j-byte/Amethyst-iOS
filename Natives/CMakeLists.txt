@@ -213,6 +213,7 @@ target_link_libraries(AngelAuraAmethyst
   "-framework CoreGraphics"
   "-framework CoreImage"
   "-framework CoreMotion"
+  "-framework CoreText"
   "-framework GameController"
   "-framework IOKit"
   "-framework QuartzCore"

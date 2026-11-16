@@ -20,6 +20,22 @@
 #include <stdatomic.h>
 
 #include "jni.h"
+
+static atomic_uint amethystRenderedFrames;
+
+void amethystRecordRenderedFrame(void) {
+    atomic_fetch_add_explicit(&amethystRenderedFrames, 1, memory_order_relaxed);
+}
+
+static void CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
+    amethystRecordRenderedFrame();
+}
+
+unsigned int amethystTakeRenderedFrames(void) {
+    return atomic_exchange_explicit(&amethystRenderedFrames, 0, memory_order_relaxed);
+}
+
+
 #include "renderer_info.h"
 #include "glfw_keycodes.h"
 #include "ios_uikit_bridge.h"
@@ -284,6 +300,42 @@ void ensureGLFWBridge() {
     }
     vmGlfwClass = (*env)->NewGlobalRef(env, localGlfwClass);
 
+    jclass callbackBridgeClass = NULL;
+    jclass classClass = (*env)->FindClass(env, "java/lang/Class");
+    if (classClass != NULL) {
+        jmethodID getClassLoader = (*env)->GetMethodID(env, classClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
+        jmethodID forName = (*env)->GetStaticMethodID(env, classClass, "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+        jobject glfwClassLoader = getClassLoader ? (*env)->CallObjectMethod(env, vmGlfwClass, getClassLoader) : NULL;
+        jstring className = (*env)->NewStringUTF(env, "org.lwjgl.glfw.CallbackBridge");
+        if (forName != NULL && className != NULL) {
+            callbackBridgeClass = (jclass)(*env)->CallStaticObjectMethod(env, classClass, forName, className, JNI_FALSE, glfwClassLoader);
+        }
+        logPendingException(env, "JNI_OnLoadGLFW: resolving CallbackBridge with GLFW classloader failed");
+    } else {
+        logPendingException(env, "JNI_OnLoadGLFW: resolving java.lang.Class failed");
+    }
+    if (callbackBridgeClass == NULL) {
+        jclass localCallbackBridge = (*env)->FindClass(env, "org/lwjgl/glfw/CallbackBridge");
+        if (localCallbackBridge != NULL) {
+            callbackBridgeClass = (jclass)(*env)->NewLocalRef(env, localCallbackBridge);
+        }
+        logPendingException(env, "JNI_OnLoadGLFW: fallback FindClass(CallbackBridge) failed");
+    }
+    if (callbackBridgeClass != NULL) {
+        JNINativeMethod frameMethods[] = {
+            {"nativeOnFramePresented", "()V", (void *)&CallbackBridge_nativeOnFramePresented}
+        };
+        jint registrationResult = (*env)->RegisterNatives(env, callbackBridgeClass, frameMethods, 1);
+        if (registrationResult != JNI_OK) {
+            logPendingException(env, "JNI_OnLoadGLFW: RegisterNatives(nativeOnFramePresented) failed");
+            NSLog(@"JNI_OnLoadGLFW: Failed to register frame counter callback (result=%d)", registrationResult);
+        } else {
+            NSLog(@"JNI_OnLoadGLFW: Registered frame counter callback");
+        }
+    } else {
+        NSLog(@"JNI_OnLoadGLFW: CallbackBridge class unavailable for FPS callback");
+    }
+
     method_internalWindowSizeChanged = (*env)->GetStaticMethodID(env, vmGlfwClass, "internalWindowSizeChanged", "(JII)V");
     if (method_internalWindowSizeChanged == NULL) {
         (*env)->ExceptionDescribe(env);
@@ -363,6 +415,7 @@ static size_t pollCount;
 static BOOL pollTaken;
 
 void pojavPumpEvents(void* window) {
+    ensureGLFWBridge();
     static BOOL setInputReady = NO;
     if(!setInputReady) {
         setInputReady = YES;

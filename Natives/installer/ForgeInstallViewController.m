@@ -141,12 +141,15 @@
 @property(nonatomic, strong) NSMutableString *currentVersionValue;
 @property(nonatomic, strong) NSIndexPath *currentDownloadIndexPath;
 @property(atomic, assign) BOOL isDataLoading;
+@property(nonatomic, assign) BOOL didLoadLegacyNeoForgeMetadata;
+@property(nonatomic, assign) BOOL isParsingLegacyNeoForgeMetadata;
 @property(nonatomic, strong) NSLock *dataLock;
 
 // Performance optimizations
 @property(nonatomic, strong) NSTimer *searchDebounceTimer;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *displayNameCache;
 @property(nonatomic, strong) dispatch_queue_t searchQueue;
+- (void)finishLoadingVersions;
 @end
 
 @implementation ForgeInstallViewController
@@ -274,6 +277,8 @@
     [self switchToLoadingState];
     
     self.isDataLoading = YES;
+    self.didLoadLegacyNeoForgeMetadata = NO;
+    self.isParsingLegacyNeoForgeMetadata = NO;
     
     [self.dataLock lock];
     [self.visibilityList removeAllObjects];
@@ -500,10 +505,10 @@
 }
 
 - (NSString *)extractMinecraftVersionFromNeoForgeVersion:(NSString *)version {
-    /* NeoForge versioning: [MC version without 1.].[NeoForge version][-beta/alpha]
-       Example: "21.4.114-beta" for Minecraft 1.21.4
-       Special case: "0.25w14craftmine.5-beta" contains snapshot "25w14craftmine" */
-    
+    if ([version hasPrefix:@"1.20.1-"]) {
+        return @"1.20.1";
+    }
+
     NSString *cleanVersion = version;
     NSRange hyphenRange = [version rangeOfString:@"-"];
     if (hyphenRange.location != NSNotFound) {
@@ -524,10 +529,13 @@
     if (components.count >= 2) {
         NSString *majorComponent = components[0];
         NSString *minorComponent = components[1];
-        
+
         if ([self isNumeric:majorComponent] && [self isNumeric:minorComponent]) {
-            NSString *mcVersion = [NSString stringWithFormat:@"1.%@.%@", majorComponent, minorComponent];
-            return mcVersion;
+            NSInteger major = majorComponent.integerValue;
+            if (major >= 26) {
+                return [NSString stringWithFormat:@"%@.%@", majorComponent, minorComponent];
+            }
+            return [NSString stringWithFormat:@"1.%@.%@", majorComponent, minorComponent];
         }
     }
     
@@ -803,7 +811,11 @@
     cell.accessoryView = self.progressView;
     cell.accessoryType = UITableViewCellAccessoryNone;
 
-    NSString *jarURL = [NSString stringWithFormat:self.endpoints[self.currentVendor][@"installer"], versionString];
+    NSString *installerTemplate = self.endpoints[self.currentVendor][@"installer"];
+    if ([self.currentVendor isEqualToString:@"NeoForge"] && [versionString hasPrefix:@"1.20.1-"]) {
+        installerTemplate = @"https://maven.neoforged.net/releases/net/neoforged/forge/%1$@/forge-%1$@-installer.jar";
+    }
+    NSString *jarURL = [NSString stringWithFormat:installerTemplate, versionString];
     NSString *outPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"tmp.jar"];
     NSDebugLog(@"[%@ Installer] Downloading %@", self.currentVendor, jarURL);
 
@@ -960,6 +972,26 @@
 #pragma mark - NSXMLParserDelegate
 
 - (void)parserDidEndDocument:(NSXMLParser *)parser {
+    if ([self.currentVendor isEqualToString:@"NeoForge"] && !self.didLoadLegacyNeoForgeMetadata) {
+        self.didLoadLegacyNeoForgeMetadata = YES;
+        self.isParsingLegacyNeoForgeMetadata = YES;
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            self.currentVersionValue = [NSMutableString new];
+            NSURL *legacyURL = [NSURL URLWithString:@"https://maven.neoforged.net/releases/net/neoforged/forge/maven-metadata.xml"];
+            NSXMLParser *legacyParser = [[NSXMLParser alloc] initWithContentsOfURL:legacyURL];
+            legacyParser.delegate = self;
+            if (![legacyParser parse] && self.isParsingLegacyNeoForgeMetadata) {
+                self.isParsingLegacyNeoForgeMetadata = NO;
+                [self finishLoadingVersions];
+            }
+        });
+        return;
+    }
+    self.isParsingLegacyNeoForgeMetadata = NO;
+    [self finishLoadingVersions];
+}
+
+- (void)finishLoadingVersions {
         dispatch_async(dispatch_get_main_queue(), ^{
 
         [self.dataLock lock];
@@ -984,6 +1016,9 @@
 
             NSArray *pa = [va componentsSeparatedByString:@"."];
             NSArray *pb = [vb componentsSeparatedByString:@"."];
+            NSInteger aMajor = pa.count > 0 ? [pa[0] integerValue] : 0;
+            NSInteger bMajor = pb.count > 0 ? [pb[0] integerValue] : 0;
+            if (aMajor != bMajor) return aMajor < bMajor ? NSOrderedDescending : NSOrderedAscending;
             NSInteger aMinor = pa.count > 1 ? [pa[1] integerValue] : 0;
             NSInteger bMinor = pb.count > 1 ? [pb[1] integerValue] : 0;
             if (aMinor != bMinor) return aMinor < bMinor ? NSOrderedDescending : NSOrderedAscending;
@@ -1084,6 +1119,12 @@
 }
 
 - (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
+    if (self.isParsingLegacyNeoForgeMetadata) {
+        self.isParsingLegacyNeoForgeMetadata = NO;
+        NSLog(@"[NeoForge Installer] Legacy metadata unavailable: %@", parseError.localizedDescription);
+        [self finishLoadingVersions];
+        return;
+    }
     dispatch_async(dispatch_get_main_queue(), ^{
         self.isDataLoading = NO;
         

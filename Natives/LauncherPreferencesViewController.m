@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <PhotosUI/PhotosUI.h>
+#import <CoreText/CoreText.h>
+#import <objc/runtime.h>
 
 #import "DBNumberedSlider.h"
 #import "HostManagerBridge.h"
@@ -17,12 +19,109 @@
 #import "utils.h"
 #import "installer/modpack/CurseForgeAPI.h"
 
+static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloat borderWidth) {
+    if (!image || borderWidth <= 0.0) return image;
+    UIImage *foreground = image;
+    if (image.renderingMode == UIImageRenderingModeAlwaysTemplate && tintColor) {
+        foreground = [image imageWithTintColor:tintColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    }
+    UIImage *outline = [foreground imageWithTintColor:UIColor.blackColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    CGFloat scale = foreground.scale > 0.0 ? foreground.scale : UIScreen.mainScreen.scale;
+    CGSize outputSize = CGSizeMake(foreground.size.width + borderWidth * 2.0, foreground.size.height + borderWidth * 2.0);
+    UIGraphicsBeginImageContextWithOptions(outputSize, NO, scale);
+    for (NSInteger x = -1; x <= 1; x++) {
+        for (NSInteger y = -1; y <= 1; y++) {
+            if (x == 0 && y == 0) continue;
+            [outline drawAtPoint:CGPointMake(borderWidth + x * borderWidth, borderWidth + y * borderWidth)];
+        }
+    }
+    [foreground drawAtPoint:CGPointMake(borderWidth, borderWidth)];
+    UIImage *result = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return [result imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+}
 @interface LauncherPreferencesViewController()<UIDocumentPickerDelegate, UIColorPickerViewControllerDelegate, PHPickerViewControllerDelegate>
 @property(nonatomic) NSArray<NSString*> *rendererKeys, *rendererList;
 @property(nonatomic, weak) UIImageView *cursorPreviewImageView;
 @property(nonatomic, weak) UIViewController *cursorPreviewController;
 @property(nonatomic) BOOL importingLauncherConfiguration;
+@property(nonatomic) BOOL importingLauncherFont;
 @end
+
+@interface UILabel (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UILabel (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length && font ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+@interface UITextField (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UITextField (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+@interface UITextView (AmethystLauncherFont)
+- (void)ame_setFont:(UIFont *)font;
+@end
+
+@implementation UITextView (AmethystLauncherFont)
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        method_exchangeImplementations(class_getInstanceMethod(self, @selector(setFont:)), class_getInstanceMethod(self, @selector(ame_setFont:)));
+    });
+}
+- (void)ame_setFont:(UIFont *)font {
+    NSString *fontName = getPrefObject(@"general.launcher_font_name");
+    UIFont *customFont = fontName.length ? [UIFont fontWithName:fontName size:font.pointSize] : nil;
+    [self ame_setFont:customFont ?: font];
+}
+@end
+
+static void AmethystApplyLauncherFontToView(UIView *view) {
+    if ([view isKindOfClass:UILabel.class]) {
+        UILabel *label = (UILabel *)view;
+        label.font = label.font;
+    } else if ([view isKindOfClass:UITextField.class]) {
+        UITextField *field = (UITextField *)view;
+        field.font = field.font;
+    } else if ([view isKindOfClass:UITextView.class]) {
+        UITextView *textView = (UITextView *)view;
+        textView.font = textView.font;
+    }
+    for (UIView *subview in view.subviews) AmethystApplyLauncherFontToView(subview);
+}
+
+static void AmethystRefreshLauncherFont(void) {
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class]) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) AmethystApplyLauncherFontToView(window);
+    }
+}
 
 @implementation LauncherPreferencesViewController
 
@@ -60,14 +159,19 @@
 }
 
 - (UIImage *)cursorPreviewCrosshairImage {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(24, 24), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    CGContextFillRect(context, CGRectMake(4, 0, 8, 16));
-    CGContextFillRect(context, CGRectMake(0, 4, 16, 8));
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat cornerRadius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
+    if (cornerRadius > 0.0) {
+        CGFloat outlineRadius = MIN(5.0, cornerRadius + 1.0);
+        CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(9, 1, 6, 22) cornerRadius:outlineRadius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(1, 9, 22, 6) cornerRadius:outlineRadius] fill];
+    }
     CGContextSetFillColorWithColor(context, [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")].CGColor);
-    CGContextFillRect(context, CGRectMake(6, 0, 4, 16));
-    CGContextFillRect(context, CGRectMake(0, 6, 16, 4));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(10, 2, 4, 20) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(2, 10, 20, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
@@ -90,8 +194,14 @@
         else if ([shape isEqualToString:@"hand"]) symbol = @"hand.point.up.left.fill";
         image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     }
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat outlineWidth = radiusPreference && [radiusPreference doubleValue] > 0.0 ? 1.0 : 0.0;
+    UIColor *tint = [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
+    if (![shape isEqualToString:@"crosshair"]) {
+        image = AMOutlinedCursorImage(image, ([style isEqualToString:@"minecraft"] || [shape isEqualToString:@"image"]) ? nil : tint, outlineWidth);
+    }
     self.cursorPreviewImageView.image = image;
-    self.cursorPreviewImageView.tintColor = ([style isEqualToString:@"minecraft"] || [shape isEqualToString:@"crosshair"] || [shape isEqualToString:@"image"]) ? nil : [self colorFromPreferenceValue:getPrefObject(@"control.mouse_cursor_color")];
+    self.cursorPreviewImageView.tintColor = nil;
 }
 
 - (void)showCursorPreview {
@@ -169,6 +279,29 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
+- (void)importLauncherFont {
+    self.importingLauncherFont = YES;
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.font"]] asCopy:YES];
+    picker.delegate = self;
+    picker.allowsMultipleSelection = NO;
+    picker.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)resetLauncherFont {
+    NSString *oldPath = getPrefObject(@"general.launcher_font_path");
+    setPrefObject(@"general.launcher_font_name", @"");
+    setPrefObject(@"general.launcher_font_path", @"");
+    AmethystRefreshLauncherFont();
+    if (oldPath.length) {
+        NSURL *fontURL = [NSURL fileURLWithPath:oldPath];
+        CTFontManagerUnregisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, nil);
+        [NSFileManager.defaultManager removeItemAtPath:oldPath error:nil];
+    }
+    showDialog(@"Launcher font reset", @"The launcher is now using its default font.");
+    [self.tableView reloadData];
+}
+
 - (void)importMouseCursorImage {
     UIAlertController *sourcePicker = [UIAlertController alertControllerWithTitle:localize(@"preference.title.mouse_cursor_image", nil) message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [sourcePicker addAction:[UIAlertAction actionWithTitle:localize(@"preference.title.import_photo_library", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
@@ -233,6 +366,7 @@
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
     self.importingLauncherConfiguration = NO;
+    self.importingLauncherFont = NO;
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
@@ -250,6 +384,71 @@
         [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
         [self.tableView reloadData];
         showDialog(localize(@"preference.title.import_launcher_config", nil), @"Launcher settings and touch-control layouts were imported.");
+        return;
+    }
+    if (self.importingLauncherFont) {
+        self.importingLauncherFont = NO;
+        if (!source) return;
+        NSString *extension = source.pathExtension.lowercaseString;
+        if (![@[@"ttf", @"otf", @"ttc"] containsObject:extension]) {
+            showDialog(localize(@"Error", nil), @"Choose a TTF, OTF, or TTC font file.");
+            return;
+        }
+        __block NSError *readError = nil;
+        __block NSData *fontData = nil;
+        BOOL accessing = [source startAccessingSecurityScopedResource];
+        NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+        [coordinator coordinateReadingItemAtURL:source options:0 error:&readError byAccessor:^(NSURL *readURL) {
+            fontData = [NSData dataWithContentsOfURL:readURL options:NSDataReadingMappedIfSafe error:&readError];
+        }];
+        if (accessing) [source stopAccessingSecurityScopedResource];
+        const char *home = getenv("AME_HOME");
+        if (!fontData.length || !home) {
+            showDialog(localize(@"Error", nil), readError.localizedDescription ?: @"Could not read the selected font file.");
+            return;
+        }
+        NSString *filename = [NSString stringWithFormat:@"launcher-font-%@.%@", NSUUID.UUID.UUIDString, extension];
+        NSString *destination = [NSString stringWithFormat:@"%s/%@", home, filename];
+        NSError *writeError = nil;
+        if (![fontData writeToFile:destination options:NSDataWritingAtomic error:&writeError]) {
+            showDialog(localize(@"Error", nil), writeError.localizedDescription ?: @"Could not save the font file.");
+            return;
+        }
+        NSURL *fontURL = [NSURL fileURLWithPath:destination];
+        CFErrorRef registrationError = NULL;
+        BOOL registered = CTFontManagerRegisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, &registrationError);
+        CFArrayRef descriptors = CTFontManagerCreateFontDescriptorsFromURL((__bridge CFURLRef)fontURL);
+        NSString *fontName = nil;
+        if (descriptors) {
+            for (CFIndex index = 0; index < CFArrayGetCount(descriptors); index++) {
+                CTFontDescriptorRef descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(descriptors, index);
+                CFStringRef descriptorName = CTFontDescriptorCopyAttribute(descriptor, kCTFontNameAttribute);
+                if (descriptorName) {
+                    NSString *candidateName = [(__bridge NSString *)descriptorName copy];
+                    CFRelease(descriptorName);
+                    if ([UIFont fontWithName:candidateName size:16]) {
+                        fontName = candidateName;
+                        break;
+                    }
+                }
+            }
+            CFRelease(descriptors);
+        }
+        UIFont *validatedFont = fontName.length ? [UIFont fontWithName:fontName size:16] : nil;
+        if (!validatedFont) {
+            NSString *message = registrationError ? [(__bridge NSError *)registrationError localizedDescription] : @"iOS could not activate a font face from this OTF, TTF, or TTC file.";
+            if (registrationError) CFRelease(registrationError);
+            if (registered) CTFontManagerUnregisterFontsForURL((__bridge CFURLRef)fontURL, kCTFontManagerScopeProcess, nil);
+            [NSFileManager.defaultManager removeItemAtPath:destination error:nil];
+            showDialog(localize(@"Error", nil), message);
+            return;
+        }
+        if (registrationError) CFRelease(registrationError);
+        setPrefObject(@"general.launcher_font_name", fontName);
+        setPrefObject(@"general.launcher_font_path", destination);
+        AmethystRefreshLauncherFont();
+        [self.tableView reloadData];
+        showDialog(@"Launcher font imported", [NSString stringWithFormat:@"%@ is now used in the launcher.", fontName]);
         return;
     }
     if (!source) return;
@@ -289,11 +488,14 @@
         NSString *keyFull = [NSString stringWithFormat:@"%@.%@", section, key];
         setPrefObject(keyFull, value);
         if ([section isEqualToString:@"control"] &&
-            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image", @"mouse_cursor_hotspot"] containsObject:key]) {
+            [@[@"mouse_cursor_style", @"mouse_cursor_shape", @"mouse_cursor_color", @"mouse_cursor_image", @"mouse_cursor_hotspot", @"mouse_cursor_corner_radius"] containsObject:key]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"AmethystMouseCursorAppearanceDidChange" object:nil];
         }
     };
     
+    if (getPrefObject(@"control.mouse_cursor_corner_radius") == nil) {
+        setPrefObject(@"control.mouse_cursor_corner_radius", @2);
+    }
     self.hasDetail = YES;
     self.prefDetailVisible = self.navigationController == nil;
     
@@ -331,6 +533,20 @@
                   debugLogEnabled = enabled;
                   NSLog(@"[Debugging] Debug log enabled: %@", enabled ? @"YES" : @"NO");
               }
+            },
+            @{@"key": @"launcher_font_import",
+              @"title": @"Import Launcher Font",
+              @"icon": @"textformat",
+              @"type": self.typeButton,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self importLauncherFont]; }
+            },
+            @{@"key": @"launcher_font_reset",
+              @"title": @"Reset Launcher Font",
+              @"icon": @"textformat.abc",
+              @"type": self.typeButton,
+              @"enableCondition": whenNotInGame,
+              @"action": ^void(){ [self resetLauncherFont]; }
             },
             @{@"key": @"appicon",
               @"hasDetail": @YES,
@@ -617,6 +833,13 @@
                 @"action": ^void(NSString *shape) {
                     self.setPreference(@"control", @"mouse_cursor_style", @"custom");
                 }
+            },
+            @{@"key": @"mouse_cursor_corner_radius",
+                @"hasDetail": @YES,
+                @"icon": @"capsule",
+                @"type": self.typeSlider,
+                @"min": @(0),
+                @"max": @(4)
             },
             @{@"key": @"mouse_cursor_color",
                 @"icon": @"paintpalette",

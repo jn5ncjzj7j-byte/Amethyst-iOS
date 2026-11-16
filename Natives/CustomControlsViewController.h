@@ -30,4 +30,5 @@ typedef void (^SetDefaultCtrlBlock)(NSString *);
 
 @interface CCMenuViewController : UIViewController
 @property(nonatomic) ControlButton* targetButton;
+@property(nonatomic, weak) CustomControlsViewController *parentEditor;
 @end

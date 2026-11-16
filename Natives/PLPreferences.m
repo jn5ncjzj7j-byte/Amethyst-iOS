@@ -54,6 +54,7 @@
             @"mouse_cursor_color": @"white",
             @"mouse_cursor_image": @"",
             @"mouse_cursor_hotspot": @"top_left",
+            @"mouse_cursor_corner_radius": @(2),
             @"gyroscope_enable": @NO,
             @"gyroscope_invert_x_axis": @NO,
             @"gyroscope_sensitivity": @(100)
@@ -85,7 +86,9 @@
         NSDictionary *general = @{
             @"game_directory": @"default",
             @"hidden_sidebar": @(realUIIdiom == UIUserInterfaceIdiomPhone),
-            @"appicon": @"AppIcon-Light"
+            @"appicon": @"AppIcon-Light",
+            @"launcher_font_name": @"",
+            @"launcher_font_path": @""
         };
         [defaults[@"general"] addEntriesFromDictionary:general];
 
