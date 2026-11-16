@@ -1133,7 +1133,7 @@ public class GLFW
                 CallbackBridge.nativeOnFramePresented();
             } catch (UnsatisfiedLinkError error) {
                 frameCallbackUnavailable = true;
-                Log.e("Amethyst", "Native frame counter callback unavailable; continuing without FPS frame counting", error);
+                error.printStackTrace();
             }
         }
         long __functionAddress = Functions.SwapBuffers;
