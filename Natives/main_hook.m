@@ -379,6 +379,8 @@ static int32_t amethyst_vkCreateGraphicsPipelines(VkZDevice device, VkZPipelineC
     return result;
 }
 
+static void *amethyst_vkGetDeviceProcAddr(VkZDevice device, const char *name);
+
 static void *amethyst_vkGetInstanceProcAddr(VkZInstance instance, const char *name) {
     if (!g_realZGetInstanceProcAddr) return NULL;
     if (name && strcmp(name, "vkGetDeviceProcAddr") == 0) {
