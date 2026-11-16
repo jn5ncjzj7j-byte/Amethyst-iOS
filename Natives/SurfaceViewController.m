@@ -486,7 +486,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.mouseSpeed = getPrefFloat(@"control.mouse_speed") / 100.0;
 
     virtualMouseEnabled = getPrefBool(@"control.virtmouse_enable");
-    self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+    self.mousePointerView.hidden = !virtualMouseEnabled;
 
     // Update virtual mouse scale
     CGFloat mouseScale = getPrefFloat(@"control.mouse_scale") / 100.0;
@@ -606,7 +606,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         self.mousePointerView.frame = virtualMouseFrame;
     }
     self.scrollPanGesture.enabled = !isGrabbing;
-    self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+    self.mousePointerView.hidden = !virtualMouseEnabled;
     [self setNeedsUpdateOfPrefersPointerLocked];
 
     // Update buttons visibility
