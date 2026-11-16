@@ -331,7 +331,7 @@ static BOOL zinkHasUnsignedAttributes(uint32_t count, const VkZGraphicsPipelineC
 static int32_t amethyst_vkCreateGraphicsPipelines(VkZDevice device, VkZPipelineCache cache, uint32_t count, const VkZGraphicsPipelineCreateInfo *infos, const void *allocator, VkZPipeline *pipelines) {
     if (!g_realZCreateGraphicsPipelines) return -3;
     int32_t result = g_realZCreateGraphicsPipelines(device, cache, count, infos, allocator, pipelines);
-    if (result == 0 || !infos || !pipelines || !zinkHasUnsignedAttributes(count, infos)) return result;
+    if (result != -3 || !infos || !pipelines || !zinkHasUnsignedAttributes(count, infos)) return result;
 
     VkZGraphicsPipelineCreateInfo *retryInfos = calloc(count, sizeof(*retryInfos));
     VkZPipelineVertexInputStateCreateInfo *retryStates = calloc(count, sizeof(*retryStates));
