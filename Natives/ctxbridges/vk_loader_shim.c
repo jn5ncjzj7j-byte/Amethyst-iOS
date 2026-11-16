@@ -28,14 +28,14 @@ static PFN_getInstanceProcAddr realGetInstanceProcAddr;
 static PFN_getDeviceProcAddr realGetDeviceProcAddr;
 static PFN_queuePresent realQueuePresent;
 
-extern void amethystRecordRenderedFrame(void) __attribute__((weak_import));
+typedef void (*PFN_recordRenderedFrame)(void);
 
 static void ensureDriver(void);
 
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
     VkResult result = realQueuePresent(queue, presentInfo);
-    if ((result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) && amethystRecordRenderedFrame) amethystRecordRenderedFrame();
+    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {\n        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");\n        if (recordFrame) recordFrame();\n    }
     return result;
 }
 
