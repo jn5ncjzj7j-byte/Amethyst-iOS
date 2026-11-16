@@ -1125,17 +1125,7 @@ public class GLFW
         invokePV(window, __functionAddress);
     }
 
-    private static volatile boolean frameCallbackUnavailable;
-
     public static void glfwSwapBuffers(@NativeType("GLFWwindow *") long window) {
-        if (!frameCallbackUnavailable) {
-            try {
-                CallbackBridge.nativeOnFramePresented();
-            } catch (UnsatisfiedLinkError error) {
-                frameCallbackUnavailable = true;
-                error.printStackTrace();
-            }
-        }
         long __functionAddress = Functions.SwapBuffers;
         invokePV(window, __functionAddress);
     }
