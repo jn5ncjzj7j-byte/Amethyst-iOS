@@ -23,8 +23,12 @@
 
 static atomic_uint amethystRenderedFrames;
 
-static void CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
+void amethystRecordRenderedFrame(void) {
     atomic_fetch_add_explicit(&amethystRenderedFrames, 1, memory_order_relaxed);
+}
+
+static void CallbackBridge_nativeOnFramePresented(JNIEnv *env, jclass clazz) {
+    amethystRecordRenderedFrame();
 }
 
 unsigned int amethystTakeRenderedFrames(void) {
