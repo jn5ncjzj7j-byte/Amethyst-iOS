@@ -162,6 +162,10 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     return UIColor.whiteColor;
 }
 
+- (void)updateVirtualMouseVisibility {
+    self.mousePointerView.hidden = !virtualMouseEnabled || isGrabbing == JNI_TRUE;
+}
+
 - (void)updateVirtualMouseAppearance {
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
     id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
@@ -340,7 +344,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     virtualMouseFrame = CGRectMake(self.view.frame.size.width / 2, self.view.frame.size.height / 2, 18, 27);
     self.mousePointerView = [[UIImageView alloc] initWithFrame:virtualMouseFrame];
     self.mousePointerView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin |UIViewAutoresizingFlexibleBottomMargin;
-    self.mousePointerView.hidden = !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
     self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
     self.mousePointerView.userInteractionEnabled = NO;
     [self.view addSubview:self.mousePointerView];
@@ -369,7 +373,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         NSLog(@"Input: Mouse connected!");
         GCMouse* mouse = note.object;
         [self registerMouseCallbacks:mouse];
-        self.mousePointerView.hidden = !virtualMouseEnabled;
+        [self updateVirtualMouseVisibility];
         [self setNeedsUpdateOfPrefersPointerLocked];
     }];
     self.mouseDisconnectCallback = [[NSNotificationCenter defaultCenter] addObserverForName:GCMouseDidDisconnectNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
@@ -396,7 +400,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         GCController* controller = note.object;
         [ControllerInput initKeycodeTable];
         [ControllerInput registerControllerCallbacks:controller];
-        self.mousePointerView.hidden = !virtualMouseEnabled;
+        [self updateVirtualMouseVisibility];
         virtualMouseEnabled = YES;
         if (getPrefBool(@"control.hardware_hide")) {
             self.ctrlView.hidden = YES;
@@ -486,7 +490,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.mouseSpeed = getPrefFloat(@"control.mouse_speed") / 100.0;
 
     virtualMouseEnabled = getPrefBool(@"control.virtmouse_enable");
-    self.mousePointerView.hidden = !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
 
     // Update virtual mouse scale
     CGFloat mouseScale = getPrefFloat(@"control.mouse_scale") / 100.0;
@@ -606,7 +610,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         self.mousePointerView.frame = virtualMouseFrame;
     }
     self.scrollPanGesture.enabled = !isGrabbing;
-    self.mousePointerView.hidden = !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
     [self setNeedsUpdateOfPrefersPointerLocked];
 
     // Update buttons visibility
@@ -863,7 +867,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 }
 
 - (BOOL)prefersPointerLocked {
-    return GCMouse.mice.count > 0 && (isGrabbing || virtualMouseEnabled);
+    return GCMouse.mice.count > 0 && isGrabbing == JNI_TRUE;
 }
 
 - (void)registerMouseCallbacks:(GCMouse *)mouse {
@@ -1102,7 +1106,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
                 case SPECIALBTN_VIRTUALMOUSE:
                     if (!isGrabbing && !held) {
                         virtualMouseEnabled = !virtualMouseEnabled;
-                        self.mousePointerView.hidden = !virtualMouseEnabled;
+                        [self updateVirtualMouseVisibility];
                         setPrefBool(@"control.virtmouse_enable", virtualMouseEnabled);
                         [self setNeedsUpdateOfPrefersPointerLocked];
                     }
