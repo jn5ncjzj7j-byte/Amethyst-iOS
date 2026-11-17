@@ -343,7 +343,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.mousePointerView.hidden = !virtualMouseEnabled;
     self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
     self.mousePointerView.userInteractionEnabled = NO;
-    [self.touchView addSubview:self.mousePointerView];
+    [self.view addSubview:self.mousePointerView];
     [self updateVirtualMouseAppearance];
 
     self.inputTextField = [[TrackedTextField alloc] initWithFrame:CGRectMake(0, -32.0, self.view.frame.size.width, 30.0)];
