@@ -400,8 +400,8 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
         GCController* controller = note.object;
         [ControllerInput initKeycodeTable];
         [ControllerInput registerControllerCallbacks:controller];
-        [self updateVirtualMouseVisibility];
         virtualMouseEnabled = YES;
+        [self updateVirtualMouseVisibility];
         if (getPrefBool(@"control.hardware_hide")) {
             self.ctrlView.hidden = YES;
         }
