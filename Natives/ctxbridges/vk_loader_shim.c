@@ -140,5 +140,10 @@ VK_EXPORT PFN_voidFunction vkGetInstanceProcAddr(void *instance, const char *nam
     if (!strcmp(name, "vkEnumerateDeviceLayerProperties"))
         return (PFN_voidFunction)vkEnumerateDeviceLayerProperties;
     if (!realGetInstanceProcAddr) return NULL;
-    return realGetInstanceProcAddr(instance, name);
+    PFN_voidFunction fn = realGetInstanceProcAddr(instance, name);
+    if (fn && !strcmp(name, "vkQueuePresentKHR")) {
+        realQueuePresent = (PFN_queuePresent)(uintptr_t)fn;
+        return (PFN_voidFunction)wrappedQueuePresent;
+    }
+    return fn;
 }

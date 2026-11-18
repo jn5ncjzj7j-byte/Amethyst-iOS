@@ -278,6 +278,13 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
             const char *vulkanFile = ame_vulkan_library_file(vulkanKind);
             NSString *vulkanPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:
                                     [@"Frameworks/" stringByAppendingString:[NSString stringWithUTF8String:vulkanFile]]];
+            if (vulkanKind == AME_RENDERER_MOLTENVK) {
+                NSString *driverPath = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:
+                                        [@"Frameworks/" stringByAppendingString:[NSString stringWithUTF8String:ame_vulkan_driver_file(vulkanKind)]]];
+                setenv("AME_VULKAN_DRIVER", driverPath.UTF8String, 1);
+            } else {
+                unsetenv("AME_VULKAN_DRIVER");
+            }
             if (vulkanKind == AME_RENDERER_KOSMICKRISP) {
                 [KosmicKrispConfig applyEnvironmentFromPreferences];
             } else {
