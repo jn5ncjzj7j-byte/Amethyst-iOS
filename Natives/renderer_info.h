@@ -8,7 +8,8 @@
 #define RENDERER_NAME_MOBILEGLUES "libmobileglues.dylib"
 #define RENDERER_NAME_MOBILEGL "libMobileGL.dylib"
 #define RENDERER_NAME_VK_ZINK "libOSMesa.8.dylib"
-#define RENDERER_NAME_MOLTENVK "libMoltenVK.dylib"
+#define RENDERER_NAME_MOLTENVK "libame_moltenvk.dylib"
+#define RENDERER_DRIVER_MOLTENVK "libMoltenVK.dylib"
 #define RENDERER_NAME_KOSMICKRISP "libvulkan.dylib"
 #define RENDERER_FILE_KOSMICKRISP "libame_vulkan.dylib"
 
@@ -32,7 +33,7 @@ static inline ame_renderer_t ame_renderer_from_name(const char *name)
     if (!strcmp(name, RENDERER_NAME_MTL_ANGLE)) return AME_RENDERER_ANGLE;
     if (!strcmp(name, RENDERER_NAME_MOBILEGLUES)) return AME_RENDERER_MOBILEGLUES;
     if (!strcmp(name, RENDERER_NAME_MOBILEGL)) return AME_RENDERER_MOBILEGL;
-    if (!strcmp(name, RENDERER_NAME_MOLTENVK)) return AME_RENDERER_MOLTENVK;
+    if (!strcmp(name, RENDERER_NAME_MOLTENVK) || !strcmp(name, RENDERER_DRIVER_MOLTENVK)) return AME_RENDERER_MOLTENVK;
     if (!strcmp(name, RENDERER_NAME_KOSMICKRISP)) return AME_RENDERER_KOSMICKRISP;
     if (!strncmp(name, "libOSMesa", 9)) return AME_RENDERER_ZINK;
     return AME_RENDERER_UNKNOWN;
@@ -73,6 +74,11 @@ static inline bool ame_vulkan_driver_sizes_layer(ame_renderer_t r)
 static inline const char *ame_vulkan_library_file(ame_renderer_t r)
 {
     return r == AME_RENDERER_KOSMICKRISP ? RENDERER_FILE_KOSMICKRISP : RENDERER_NAME_MOLTENVK;
+}
+
+static inline const char *ame_vulkan_driver_file(ame_renderer_t r)
+{
+    return r == AME_RENDERER_KOSMICKRISP ? RENDERER_NAME_KOSMICKRISP : RENDERER_DRIVER_MOLTENVK;
 }
 
 static inline bool isMobileGLRenderer(const char *renderer)
