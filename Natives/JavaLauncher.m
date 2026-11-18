@@ -65,7 +65,6 @@ void init_loadDefaultEnv() {
     // MoltenVK 1.4.3 performance defaults for Apple GPUs.
     // Use setenv(..., 0) so per-profile/user Java environment overrides win.
     setenv("MVK_CONFIG_FAST_MATH_ENABLED", "2", 0);
-    setenv("MVK_CONFIG_SYNCHRONOUS_QUEUE_SUBMITS", "1", 0);
     setenv("MVK_CONFIG_PREFILL_METAL_COMMAND_BUFFERS", "0", 0);
     setenv("MVK_CONFIG_USE_COMMAND_POOLING", "1", 0);
     setenv("MVK_CONFIG_USE_MTLHEAP", "1", 0);
@@ -256,6 +255,7 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
 
         // Apply Zink-specific environment variables if Zink renderer is selected
         if ([renderer hasPrefix:@"libOSMesa"]) {
+            setenv("MVK_CONFIG_SYNCHRONOUS_QUEUE_SUBMITS", "0", 0);
             [ZinkConfig applyZinkEnvironmentFromPreferences];
             NSString *configSummary = [ZinkConfig activeConfigSummary];
             NSLog(@"[ZinkConfig] ========== Zink Renderer Active (Mesa 25) ==========");
