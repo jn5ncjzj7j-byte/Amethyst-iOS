@@ -410,6 +410,16 @@ dep_ame_vulkan:
 		$(SOURCEDIR)/Natives/ctxbridges/vk_loader_shim.c || exit 1
 	echo '[Amethyst v$(VERSION)] dep_ame_vulkan - end'
 
+dep_ame_moltenvk:
+	echo '[Amethyst v$(VERSION)] dep_ame_moltenvk - start'
+	mkdir -p $(WORKINGDIR)
+	xcrun --sdk iphoneos clang \
+		-O2 -Wall -Wextra -Werror -arch arm64 -isysroot "$(SDKPATH)" -miphoneos-version-min=17.0 \
+		-fvisibility=default -dynamiclib -install_name @rpath/libame_moltenvk.dylib \
+		-o $(WORKINGDIR)/libame_moltenvk.dylib \
+		$(SOURCEDIR)/Natives/ctxbridges/vk_loader_shim.c || exit 1
+	echo '[Amethyst v$(VERSION)] dep_ame_moltenvk - end'
+
 assets:
 	echo '[Amethyst v$(VERSION)] assets - start'
 	if [ '$(IOS)' = '0' ] && [ '$(DETECTPLAT)' = 'Darwin' ]; then \
@@ -425,7 +435,7 @@ assets:
 	fi
 	echo '[Amethyst v$(VERSION)] assets - end'
 
-payload: native dep_mg dep_mobilegl dep_mcmetal dep_ame_vulkan java jre assets
+payload: native dep_mg dep_mobilegl dep_mcmetal dep_ame_vulkan dep_ame_moltenvk java jre assets
 	echo '[Amethyst v$(VERSION)] payload - start'
 	$(call METHOD_DIRCHECK,$(WORKINGDIR)/AngelAuraAmethyst.app/libs)
 	$(call METHOD_DIRCHECK,$(WORKINGDIR)/AngelAuraAmethyst.app/libs_caciocavallo)
