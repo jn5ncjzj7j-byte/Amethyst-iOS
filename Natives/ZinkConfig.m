@@ -415,7 +415,8 @@ static AppleGPUGeneration _cachedGPUGeneration = AppleGPUGenerationUnknown;
         ? (NSString *)glOverride : @"4.1 (from level)";
 
     id glThread = getPrefObject(@"zink.enable_gl_thread");
-    NSString *glThreadStr = glThread ? ([glThread boolValue] ? @"YES" : @"NO") : @"YES";
+    BOOL defaultGLThreadEnabled = [self deviceGPUGeneration] > AppleGPUGenerationA14;
+    NSString *glThreadStr = glThread ? ([glThread boolValue] ? @"YES" : @"NO") : (defaultGLThreadEnabled ? @"YES" : @"NO (A14 stability default)");
 
     id cacheSize = getPrefObject(@"zink.glsl_cache_size");
     NSString *cacheStr = cacheSize ? [NSString stringWithFormat:@"%ld MB", (long)[cacheSize integerValue]] : @"32 MB";
@@ -491,9 +492,8 @@ static AppleGPUGeneration _cachedGPUGeneration = AppleGPUGenerationUnknown;
     if (enableGLThread) {
         setenv("mesa_glthread", [enableGLThread boolValue] ? "true" : "false", 1);
     } else {
-        // Disable glthread on A11 and older to reduce memory pressure
         AppleGPUGeneration gen = [self deviceGPUGeneration];
-        if (gen <= AppleGPUGenerationA11) {
+        if (gen <= AppleGPUGenerationA14) {
             setenv("mesa_glthread", "false", 1);
         }
     }
