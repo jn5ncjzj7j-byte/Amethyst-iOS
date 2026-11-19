@@ -96,6 +96,14 @@ This issue has been observed across multiple Minecraft versions supported by the
 
 For troubleshooting, compare the same Minecraft version and mod set with Sodium disabled. This helps determine whether the freeze is specific to the Sodium and MobileGlues combination.
 
+### Misg Rendered (Zink), Iris, and shader stability
+
+A native rendering crash is under investigation on some Apple GPU devices when using Misg Rendered through Zink/MoltenVK with Iris shaders. One A14 crash report showed a MoltenVK graphics-pipeline compilation failure involving an unsigned-short three-component vertex attribute, followed by a native crash in Mesa's Zink pipeline update path. The available report does not identify a specific Mellow Shader setting as the cause.
+
+A separate A14 test change disables Mesa GL threading by default for Zink on A14 and older devices. An explicit `zink.enable_gl_thread` preference still overrides that default. This is an experimental compatibility measure, not a confirmed fix for the vertex-format pipeline failure.
+
+When testing this renderer, check both entering a world with a shader already enabled and changing shader settings after joining. Also test chunk loading and record whether the application exits unexpectedly. Compare performance as well, since disabling GL threading may affect frame rates.
+
 ## Contributors
 Amethyst is amazing, and surprisingly stable, and it wouldn't be this way without the commmunity that helped and contribute to the project! Some notable names:
 
