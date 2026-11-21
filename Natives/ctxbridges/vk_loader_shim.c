@@ -42,15 +42,19 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     return result;
 }
 
-VK_EXPORT PFN_voidFunction vkGetDeviceProcAddr(void *device, const char *name) {
-    ensureDriver();
-    if (!realGetDeviceProcAddr) return NULL;
-    PFN_voidFunction fn = realGetDeviceProcAddr(device, name);
+static PFN_voidFunction wrapQueuePresent(PFN_voidFunction fn, const char *name) {
     if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
         realQueuePresent = (PFN_queuePresent)(uintptr_t)fn;
         return (PFN_voidFunction)wrappedQueuePresent;
     }
     return fn;
+}
+
+VK_EXPORT PFN_voidFunction vkGetDeviceProcAddr(void *device, const char *name) {
+    ensureDriver();
+    if (!realGetDeviceProcAddr) return NULL;
+    PFN_voidFunction fn = realGetDeviceProcAddr(device, name);
+    return wrapQueuePresent(fn, name);
 }
 
 static void *driverSymbol(const char *name) {
@@ -140,5 +144,6 @@ VK_EXPORT PFN_voidFunction vkGetInstanceProcAddr(void *instance, const char *nam
     if (!strcmp(name, "vkEnumerateDeviceLayerProperties"))
         return (PFN_voidFunction)vkEnumerateDeviceLayerProperties;
     if (!realGetInstanceProcAddr) return NULL;
-    return realGetInstanceProcAddr(instance, name);
+    PFN_voidFunction fn = realGetInstanceProcAddr(instance, name);
+    return wrapQueuePresent(fn, name);
 }
