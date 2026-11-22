@@ -19,6 +19,4 @@ void AMELogFrameGenerationCapabilities(void) {
     } else {
         NSLog(@"[MisgFrameGen] MetalFX frame interpolation capability query requires iOS 26 or newer");
     }
-
-    [device release];
 }
