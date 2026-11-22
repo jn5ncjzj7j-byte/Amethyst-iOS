@@ -33,6 +33,7 @@
 #define fm NSFileManager.defaultManager
 
 extern char **environ;
+extern void AMELogFrameGenerationCapabilities(void);
 
 BOOL validateVirtualMemorySpace(size_t size) {
     size <<= 20; // convert to MB
@@ -159,6 +160,7 @@ static BOOL versionHasVulkanBackend(NSString *versionId) {
 
 int launchJVM(NSString *username, id launchTarget, int width, int height, int minVersion) {
     NSLog(@"[JavaLauncher] Beginning JVM launch");
+    AMELogFrameGenerationCapabilities();
 
     init_loadDefaultEnv();
     init_loadCustomEnv();
