@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define VK_EXPORT __attribute__((visibility("default")))
@@ -27,24 +28,30 @@ static PFN_enumerateExtensions realEnumerateExtensions;
 static PFN_getInstanceProcAddr realGetInstanceProcAddr;
 static PFN_getDeviceProcAddr realGetDeviceProcAddr;
 static PFN_queuePresent realQueuePresent;
+extern void amethystRecordRenderedFrame(void) __attribute__((weak_import));
 
 typedef void (*PFN_recordRenderedFrame)(void);
 
 static void ensureDriver(void);
 
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
-    if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
-    VkResult result = realQueuePresent(queue, presentInfo);
-    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");
-        if (recordFrame) recordFrame();
+    PFN_queuePresent present = __atomic_load_n(&realQueuePresent, __ATOMIC_ACQUIRE);
+    if (!present) return VK_ERROR_INITIALIZATION_FAILED;
+    VkResult result = present(queue, presentInfo);
+    if ((result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) && amethystRecordRenderedFrame) {
+        amethystRecordRenderedFrame();
+    } else if ((result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) && !amethystRecordRenderedFrame) {
+        static int warned;
+        if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
+            fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\n", stderr);
+        }
     }
     return result;
 }
 
 static PFN_voidFunction wrapQueuePresent(PFN_voidFunction fn, const char *name) {
     if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
-        realQueuePresent = (PFN_queuePresent)(uintptr_t)fn;
+        __atomic_store_n(&realQueuePresent, (PFN_queuePresent)(uintptr_t)fn, __ATOMIC_RELEASE);
         return (PFN_voidFunction)wrappedQueuePresent;
     }
     return fn;
