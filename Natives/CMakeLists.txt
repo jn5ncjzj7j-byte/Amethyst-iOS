@@ -101,6 +101,7 @@ target_link_libraries(AmethystAccountJNI)
 add_executable(AngelAuraAmethyst
   dyld_bypass_validation.m
   dyld_patch_platform.m
+  FrameGenerationSupport.m
   main.m
   main_hook.m
   JavaLauncher.m
@@ -215,6 +216,8 @@ target_link_libraries(AngelAuraAmethyst
   "-framework CoreMotion"
   "-framework CoreText"
   "-framework GameController"
+  "-framework Metal"
+  "-weak_framework MetalFX"
   "-framework IOKit"
   "-framework QuartzCore"
   "-framework PhotosUI"
