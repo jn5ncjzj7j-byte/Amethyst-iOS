@@ -50,7 +50,7 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
         } else {
             static int warned;
             if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
-                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\\n", stderr);
+                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\n", stderr);
             }
         }
     }
