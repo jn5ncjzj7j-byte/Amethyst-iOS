@@ -19,8 +19,10 @@ typedef VkResult (*PFN_enumerateExtensions)(const char *, uint32_t *, void *);
 typedef PFN_voidFunction (*PFN_getInstanceProcAddr)(void *, const char *);
 typedef PFN_voidFunction (*PFN_getDeviceProcAddr)(void *, const char *);
 typedef VkResult (*PFN_queuePresent)(void *, const void *);
+typedef void (*PFN_recordRenderedFrame)(void);
 
 static pthread_once_t driverOnce = PTHREAD_ONCE_INIT;
+static pthread_once_t frameCallbackOnce = PTHREAD_ONCE_INIT;
 static void *driverLib;
 static PFN_createInstance realCreateInstance;
 static PFN_enumerateVersion realEnumerateVersion;
@@ -28,22 +30,28 @@ static PFN_enumerateExtensions realEnumerateExtensions;
 static PFN_getInstanceProcAddr realGetInstanceProcAddr;
 static PFN_getDeviceProcAddr realGetDeviceProcAddr;
 static PFN_queuePresent realQueuePresent;
-extern void amethystRecordRenderedFrame(void) __attribute__((weak_import));
-
-typedef void (*PFN_recordRenderedFrame)(void);
+static PFN_recordRenderedFrame recordRenderedFrame;
 
 static void ensureDriver(void);
+static void loadFrameCallback(void);
+
+static void loadFrameCallback(void) {
+    recordRenderedFrame = (PFN_recordRenderedFrame)(uintptr_t)dlsym(RTLD_MAIN_ONLY, "amethystRecordRenderedFrame");
+}
 
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     PFN_queuePresent present = __atomic_load_n(&realQueuePresent, __ATOMIC_ACQUIRE);
     if (!present) return VK_ERROR_INITIALIZATION_FAILED;
     VkResult result = present(queue, presentInfo);
-    if ((result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) && amethystRecordRenderedFrame) {
-        amethystRecordRenderedFrame();
-    } else if ((result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) && !amethystRecordRenderedFrame) {
-        static int warned;
-        if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
-            fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\n", stderr);
+    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
+        pthread_once(&frameCallbackOnce, loadFrameCallback);
+        if (recordRenderedFrame) {
+            recordRenderedFrame();
+        } else {
+            static int warned;
+            if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
+                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\\n", stderr);
+            }
         }
     }
     return result;
