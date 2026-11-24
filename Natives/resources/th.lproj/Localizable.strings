@@ -367,6 +367,12 @@
 "content.title.mod" = "ม็อด";
 "content.title.resourcepack" = "แพ็กทรัพยากร";
 "content.title.shader" = "แพ็ก Shader";
+"content.installed.search" = "ค้นหาแพ็กที่ติดตั้งแล้ว";
+"content.installed.refresh" = "รีเฟรชรายการแพ็กที่ติดตั้ง";
+"content.installed.item" = "ติดตั้งอยู่ในโปรไฟล์ที่เลือก";
+"content.installed.empty" = "ไม่พบแพ็กที่ติดตั้งซึ่งตรงกับการค้นหานี้";
+"content.installed.remove" = "ลบแพ็ก";
+"content.installed.remove_confirm" = "ต้องการลบ %@ ออกจากโปรไฟล์นี้หรือไม่?";
 "content.provider" = "แหล่งดาวน์โหลด";
 "content.search_placeholder" = "ค้นหาบน %@";
 "content.curseforge.pending" = "รอการตั้งค่า CurseForge";
