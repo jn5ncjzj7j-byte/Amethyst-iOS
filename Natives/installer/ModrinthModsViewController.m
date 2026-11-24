@@ -567,7 +567,7 @@ static NSString *MRCategorySymbol(NSString *category) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.providerToggle = [[UISegmentedControl alloc] initWithItems:[self.contentType isEqual:@"mod"] ? @[@"Modrinth", @"CurseForge", localize(@"mods.installed.tab", nil)] : @[@"Modrinth", @"CurseForge"]];
+    self.providerToggle = [[UISegmentedControl alloc] initWithItems:@[@"Modrinth", @"CurseForge", localize(@"mods.installed.tab", nil)]];
     [self.providerToggle setEnabled:[CurseForgeAPI isConfigured] forSegmentAtIndex:1];
     self.providerToggle.selectedSegmentIndex = 0;
     self.providerToggle.accessibilityLabel = localize(@"content.provider", nil);
@@ -645,7 +645,7 @@ static NSString *MRCategorySymbol(NSString *category) {
 - (NSString *)sortTitle:(NSString *)value {
     return [self.provider isEqual:@"curseforge"] && [value isEqual:@"relevance"] ? localize(@"content.sort.popularity", nil) : localize([@"mods.sort." stringByAppendingString:value], nil);
 }
-- (void)updateSearchPlaceholder { if (self.isInstalledMode) { self.searchBar.placeholder = localize(@"mods.installed.search", nil); return; } self.searchBar.placeholder = [NSString stringWithFormat:localize(@"content.search_placeholder", nil), ContentProviderTitle(self.provider)]; }
+- (void)updateSearchPlaceholder { if (self.isInstalledMode) { self.searchBar.placeholder = localize([self.contentType isEqual:@"mod"] ? @"mods.installed.search" : @"content.installed.search", nil); return; } self.searchBar.placeholder = [NSString stringWithFormat:localize(@"content.search_placeholder", nil), ContentProviderTitle(self.provider)]; }
 - (void)providerChanged:(UISegmentedControl *)sender {
     [self.searchBar resignFirstResponder];
     if (sender.selectedSegmentIndex == 1 && ![CurseForgeAPI isConfigured]) { sender.selectedSegmentIndex = 0; }
@@ -712,7 +712,7 @@ static NSString *MRCategorySymbol(NSString *category) {
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 2; }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    if (self.isInstalledMode) return section == 0 ? (self.installedOperation.busy ? 1 : 2) : MAX(1, self.visibleInstalledEntries.count);
+    if (self.isInstalledMode) return section == 0 ? ([self.contentType isEqual:@"mod"] ? (self.installedOperation.busy ? 1 : 2) : 1) : MAX(1, self.visibleInstalledEntries.count);
     if (section == 0) return [self.contentType isEqual:@"mod"] ? 5 : 4;
     return self.results.count + ((self.loading || self.searchError || !self.results.count || !self.reachedLastPage) ? 1 : 0);
 }
@@ -786,7 +786,7 @@ static NSString *MRCategorySymbol(NSString *category) {
     PLProfiles *profiles = PLProfiles.current;
     NSString *root = profiles.profilePath.stringByDeletingLastPathComponent ?: @"";
     NSString *game = [profiles.selectedProfile[@"gameDir"] isKindOfClass:NSString.class] && [profiles.selectedProfile[@"gameDir"] length] ? profiles.selectedProfile[@"gameDir"] : @".";
-    return [[NSString stringWithFormat:@"%@/%@", root, game].stringByStandardizingPath stringByAppendingPathComponent:@"mods"];
+    return [[NSString stringWithFormat:@"%@/%@", root, game].stringByStandardizingPath stringByAppendingPathComponent:ContentFolder(self.contentType)];
 }
 - (NSArray *)visibleInstalledEntries {
     NSString *query = self.searchBar.text ?: @"";
@@ -802,7 +802,20 @@ static NSString *MRCategorySymbol(NSString *category) {
     self.installedLoading = YES; self.installedError = nil; [self.tableView reloadData];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSError *error;
-        NSArray *entries = [InstalledModsManager entriesInDirectory:directory identify:updates error:&error];
+        NSArray *entries;
+        if (![self.contentType isEqual:@"mod"]) {
+            NSFileManager *manager = NSFileManager.defaultManager;
+            NSArray *names = [manager fileExistsAtPath:directory] ? [manager contentsOfDirectoryAtPath:directory error:&error] : @[];
+            NSMutableArray *files = [NSMutableArray new];
+            for (NSString *name in [names sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]) {
+                if ([name hasPrefix:@"."] || ![name.pathExtension.lowercaseString isEqual:@"zip"]) continue;
+                NSString *path = [directory stringByAppendingPathComponent:name];
+                if ([[manager attributesOfItemAtPath:path error:nil][NSFileType] isEqual:NSFileTypeRegular]) [files addObject:@{@"filename":name, @"enabled":@YES}];
+            }
+            entries = names ? files : nil;
+        } else {
+            entries = [InstalledModsManager entriesInDirectory:directory identify:updates error:&error];
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             if (generation != self.installedGeneration || ![context isEqual:self.profileSignature]) return;
             self.installedEntries = entries; self.installedError = error;
@@ -819,6 +832,12 @@ static NSString *MRCategorySymbol(NSString *category) {
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
     cell.textLabel.numberOfLines = 0; cell.detailTextLabel.numberOfLines = 0;
     if (indexPath.section == 0) {
+        if (![self.contentType isEqual:@"mod"]) {
+            cell.textLabel.text = localize(@"content.installed.refresh", nil);
+            cell.detailTextLabel.text = self.installedLoading ? localize(@"mods.loading", nil) : nil;
+            cell.textLabel.textColor = self.installedLoading ? UIColor.secondaryLabelColor : self.view.tintColor;
+            return cell;
+        }
         if (self.installedOperation.busy) {
             cell.textLabel.text = localize(self.installedOperation.checking ? @"mods.installed.resolving" : @"mods.installed.downloading", nil);
             cell.detailTextLabel.text = self.installedOperation.installingVersion[@"version_number"];
@@ -834,10 +853,17 @@ static NSString *MRCategorySymbol(NSString *category) {
     }
     NSArray *entries = self.visibleInstalledEntries;
     if (!entries.count) {
-        cell.textLabel.text = localize(self.installedLoading ? @"mods.loading" : self.installedError ? @"mods.retry" : @"mods.installed.empty", nil);
+        cell.textLabel.text = localize(self.installedLoading ? @"mods.loading" : self.installedError ? @"mods.retry" : [self.contentType isEqual:@"mod"] ? @"mods.installed.empty" : @"content.installed.empty", nil);
         cell.detailTextLabel.text = self.installedError.localizedDescription; return cell;
     }
     NSDictionary *entry = entries[indexPath.row];
+    if (![self.contentType isEqual:@"mod"]) {
+        cell.textLabel.text = entry[@"filename"];
+        cell.detailTextLabel.text = localize(@"content.installed.item", nil);
+        cell.imageView.image = [UIImage systemImageNamed:[self.contentType isEqual:@"shader"] ? @"sun.max" : @"photo.on.rectangle.angled"];
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        return cell;
+    }
     cell.textLabel.text = entry[@"project"][@"title"] ?: entry[@"filename"];
     NSString *status = localize([entry[@"enabled"] boolValue] ? @"mods.installed.enabled" : @"mods.installed.disabled", nil);
     NSString *version = entry[@"version"][@"version_number"] ?: entry[@"version"][@"name"] ?: @"";
@@ -878,7 +904,9 @@ static NSString *MRCategorySymbol(NSString *category) {
     self.installedLoading = YES; [self.tableView reloadData];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSError *error;
-        if (remove) [InstalledModsManager removeEntry:entry directory:directory error:&error];
+        if (![self.contentType isEqual:@"mod"]) {
+            if (remove) [NSFileManager.defaultManager removeItemAtPath:[directory stringByAppendingPathComponent:entry[@"filename"]] error:&error];
+        } else if (remove) [InstalledModsManager removeEntry:entry directory:directory error:&error];
         else [InstalledModsManager setEntry:entry enabled:![entry[@"enabled"] boolValue] directory:directory error:&error];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![context isEqual:self.profileSignature]) return;
@@ -888,10 +916,21 @@ static NSString *MRCategorySymbol(NSString *category) {
 }
 - (void)selectInstalled:(NSIndexPath *)indexPath {
     if ([ModrinthModInstallation isInstalling] || self.installedLoading) return;
-    if (indexPath.section == 0) { if (indexPath.row == 0) [self refreshInstalled:YES]; else [self runInstalledVersion:nil entry:nil enable:NO]; return; }
+    if (indexPath.section == 0) {
+        if (![self.contentType isEqual:@"mod"] || indexPath.row == 0) [self refreshInstalled:[self.contentType isEqual:@"mod"]];
+        else [self runInstalledVersion:nil entry:nil enable:NO];
+        return;
+    }
     NSArray *entries = self.visibleInstalledEntries;
     if (!entries.count) { if (self.installedError) [self refreshInstalled:NO]; return; }
     NSDictionary *entry = entries[indexPath.row];
+    if (![self.contentType isEqual:@"mod"]) {
+        UIAlertController *confirm = [UIAlertController alertControllerWithTitle:localize(@"content.installed.remove", nil) message:[NSString stringWithFormat:localize(@"content.installed.remove_confirm", nil), entry[@"filename"]] preferredStyle:UIAlertControllerStyleAlert];
+        [confirm addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:nil]];
+        [confirm addAction:[UIAlertAction actionWithTitle:localize(@"content.installed.remove", nil) style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) { [self changeInstalledEntry:entry remove:YES]; }]];
+        [self presentViewController:confirm animated:YES completion:nil];
+        return;
+    }
     UIAlertController *menu = [UIAlertController alertControllerWithTitle:entry[@"project"][@"title"] ?: entry[@"filename"] message:entry[@"filename"] preferredStyle:UIAlertControllerStyleActionSheet];
     [menu addAction:[UIAlertAction actionWithTitle:localize([entry[@"enabled"] boolValue] ? @"mods.installed.disable" : entry[@"version"] ? @"mods.installed.enable" : @"mods.installed.enable_file", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         if (![entry[@"enabled"] boolValue] && entry[@"version"]) [self runInstalledVersion:entry[@"version"] entry:entry enable:YES]; else [self changeInstalledEntry:entry remove:NO];
