@@ -243,6 +243,10 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         // Setup AME_RENDERER
         NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"];
         gameHasVulkanBackend = versionHasVulkanBackend(launchTarget[@"id"]) || versionHasVulkanBackend(launchTarget[@"inheritsFrom"]);
+        if (![renderer isKindOfClass:NSString.class] || ame_renderer_from_name(renderer.UTF8String) == AME_RENDERER_UNKNOWN) {
+            NSLog(@"[JavaLauncher] Unknown renderer preference %@; using a supported default", renderer);
+            renderer = gameHasVulkanBackend ? @RENDERER_NAME_MOLTENVK : @"auto";
+        }
         if (gameHasVulkanBackend && ame_renderer_from_name(renderer.UTF8String) == AME_RENDERER_AUTO) {
             renderer = @RENDERER_NAME_MOLTENVK;
         }
