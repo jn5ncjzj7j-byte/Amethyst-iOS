@@ -805,7 +805,7 @@ static NSString *MRCategorySymbol(NSString *category) {
         NSArray *entries;
         if (![self.contentType isEqual:@"mod"]) {
             NSFileManager *manager = NSFileManager.defaultManager;
-            NSArray *names = [manager contentsOfDirectoryAtPath:directory error:&error];
+            NSArray *names = [manager fileExistsAtPath:directory] ? [manager contentsOfDirectoryAtPath:directory error:&error] : @[];
             NSMutableArray *files = [NSMutableArray new];
             for (NSString *name in [names sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]) {
                 if ([name hasPrefix:@"."] || ![name.pathExtension.lowercaseString isEqual:@"zip"]) continue;
@@ -853,7 +853,7 @@ static NSString *MRCategorySymbol(NSString *category) {
     }
     NSArray *entries = self.visibleInstalledEntries;
     if (!entries.count) {
-        cell.textLabel.text = localize(self.installedLoading ? @"mods.loading" : self.installedError ? @"mods.retry" : @"mods.installed.empty", nil);
+        cell.textLabel.text = localize(self.installedLoading ? @"mods.loading" : self.installedError ? @"mods.retry" : [self.contentType isEqual:@"mod"] ? @"mods.installed.empty" : @"content.installed.empty", nil);
         cell.detailTextLabel.text = self.installedError.localizedDescription; return cell;
     }
     NSDictionary *entry = entries[indexPath.row];
