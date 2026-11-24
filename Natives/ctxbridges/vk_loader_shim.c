@@ -54,7 +54,7 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
         static int logged;
         if (!__atomic_exchange_n(&logged, 1, __ATOMIC_RELAXED)) {
-            fputs("[AmethystVulkan] vkQueuePresentKHR hook is active\\n", stderr);
+            fputs("[AmethystVulkan] vkQueuePresentKHR hook is active\n", stderr);
         }
         pthread_once(&frameCounterOnce, resolveFrameCounter);
         PFN_recordRenderedFrame callback = recordRenderedFrame;
@@ -63,7 +63,7 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
         } else {
             static int warned;
             if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
-                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\\n", stderr);
+                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\n", stderr);
             }
         }
     }
