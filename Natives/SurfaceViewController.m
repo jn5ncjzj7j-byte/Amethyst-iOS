@@ -27,17 +27,7 @@
 #include "renderer_info.h"
 #include "utils.h"
 
-static unsigned int amethystRenderedFrameCount;
-
-__attribute__((visibility("default"), used))
-void amethystRecordRenderedFrame(void) {
-    __atomic_fetch_add(&amethystRenderedFrameCount, 1u, __ATOMIC_RELAXED);
-}
-
-__attribute__((visibility("default"), used))
-unsigned int amethystTakeRenderedFrames(void) {
-    return __atomic_exchange_n(&amethystRenderedFrameCount, 0u, __ATOMIC_ACQ_REL);
-}
+extern unsigned int amethystTakeRenderedFrames(void);
 
 #include <dlfcn.h>
 #include <math.h>
