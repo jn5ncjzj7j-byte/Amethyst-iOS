@@ -1036,9 +1036,10 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     if (sender.state == UIGestureRecognizerStateBegan ||
         sender.state == UIGestureRecognizerStateChanged ||
         sender.state == UIGestureRecognizerStateEnded) {
-        CGPoint velocity = [sender velocityInView:self.rootView];
-        if (velocity.x != 0.0f || velocity.y != 0.0f) {
-            CallbackBridge_nativeSendScroll(velocity.x/self.view.frame.size.width, velocity.y/self.view.frame.size.height);
+        CGPoint delta = [sender translationInView:self.rootView];
+        [sender setTranslation:CGPointZero inView:self.rootView];
+        if (delta.x != 0.0 || delta.y != 0.0) {
+            CallbackBridge_nativeSendScroll(delta.x / 40.0, delta.y / 40.0);
         }
     }
 }
