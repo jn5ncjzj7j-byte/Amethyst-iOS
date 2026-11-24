@@ -430,6 +430,12 @@
 "content.title.mod" = "Mods";
 "content.title.resourcepack" = "Resource packs";
 "content.title.shader" = "Shaderpacks";
+"content.installed.search" = "Search installed packs";
+"content.installed.refresh" = "Refresh installed packs";
+"content.installed.item" = "Installed in the selected profile";
+"content.installed.empty" = "No installed packs match this search";
+"content.installed.remove" = "Remove pack";
+"content.installed.remove_confirm" = "Remove %@ from this profile?";
 "content.provider" = "Download source";
 "content.search_placeholder" = "Search on %@";
 "content.curseforge.pending" = "CurseForge pending configuration";
