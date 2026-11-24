@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define VK_EXPORT __attribute__((visibility("default")))
@@ -32,25 +33,56 @@ typedef void (*PFN_recordRenderedFrame)(void);
 
 static void ensureDriver(void);
 
+static pthread_once_t frameCounterOnce = PTHREAD_ONCE_INIT;
+static PFN_recordRenderedFrame recordRenderedFrame;
+
+static void resolveFrameCounter(void) {
+    void *symbol = NULL;
+#ifdef RTLD_MAIN_ONLY
+    symbol = dlsym(RTLD_MAIN_ONLY, "amethystRecordRenderedFrame");
+#endif
+    if (!symbol) {
+        symbol = dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");
+    }
+    recordRenderedFrame = (PFN_recordRenderedFrame)(uintptr_t)symbol;
+}
+
 static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
-    if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
-    VkResult result = realQueuePresent(queue, presentInfo);
+    PFN_queuePresent present = __atomic_load_n(&realQueuePresent, __ATOMIC_ACQUIRE);
+    if (!present) return VK_ERROR_INITIALIZATION_FAILED;
+    VkResult result = present(queue, presentInfo);
     if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");
-        if (recordFrame) recordFrame();
+        static int logged;
+        if (!__atomic_exchange_n(&logged, 1, __ATOMIC_RELAXED)) {
+            fputs("[AmethystVulkan] vkQueuePresentKHR hook is active\\n", stderr);
+        }
+        pthread_once(&frameCounterOnce, resolveFrameCounter);
+        PFN_recordRenderedFrame callback = recordRenderedFrame;
+        if (callback) {
+            callback();
+        } else {
+            static int warned;
+            if (!__atomic_exchange_n(&warned, 1, __ATOMIC_RELAXED)) {
+                fputs("[AmethystVulkan] Frame counter callback is not exported by the host executable\\n", stderr);
+            }
+        }
     }
     return result;
+}
+
+static PFN_voidFunction wrapQueuePresent(PFN_voidFunction fn, const char *name) {
+    if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
+        __atomic_store_n(&realQueuePresent, (PFN_queuePresent)(uintptr_t)fn, __ATOMIC_RELEASE);
+        return (PFN_voidFunction)wrappedQueuePresent;
+    }
+    return fn;
 }
 
 VK_EXPORT PFN_voidFunction vkGetDeviceProcAddr(void *device, const char *name) {
     ensureDriver();
     if (!realGetDeviceProcAddr) return NULL;
     PFN_voidFunction fn = realGetDeviceProcAddr(device, name);
-    if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
-        realQueuePresent = (PFN_queuePresent)(uintptr_t)fn;
-        return (PFN_voidFunction)wrappedQueuePresent;
-    }
-    return fn;
+    return wrapQueuePresent(fn, name);
 }
 
 static void *driverSymbol(const char *name) {
@@ -140,5 +172,6 @@ VK_EXPORT PFN_voidFunction vkGetInstanceProcAddr(void *instance, const char *nam
     if (!strcmp(name, "vkEnumerateDeviceLayerProperties"))
         return (PFN_voidFunction)vkEnumerateDeviceLayerProperties;
     if (!realGetInstanceProcAddr) return NULL;
-    return realGetInstanceProcAddr(instance, name);
+    PFN_voidFunction fn = realGetInstanceProcAddr(instance, name);
+    return wrapQueuePresent(fn, name);
 }
