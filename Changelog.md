@@ -9,6 +9,7 @@ You're helping to shape our future while we work to build a release.
 - Added custom mouse cursor styles, shapes, colors, and cursor image support.
 - Added local importing for mods, resource packs, and shader packs.
 - Added Misg Rendered renderer selection for supported Minecraft versions.
+- Added installed Resource Packs and Shader Packs views with search, refresh, and removal.
 - Added an in-app changelog that reads this file from the app bundle.
 - Improved two-finger scrolling so each gesture update sends its movement delta.
 
