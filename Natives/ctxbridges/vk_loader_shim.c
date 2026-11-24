@@ -36,6 +36,10 @@ static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
     if (!present) return VK_ERROR_INITIALIZATION_FAILED;
     VkResult result = present(queue, presentInfo);
     if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
+        static int logged;
+        if (!__atomic_exchange_n(&logged, 1, __ATOMIC_RELAXED)) {
+            fputs("[AmethystVulkan] vkQueuePresentKHR hook is active\n", stderr);
+        }
         if (amethystRecordRenderedFrame) {
             amethystRecordRenderedFrame();
         } else {
