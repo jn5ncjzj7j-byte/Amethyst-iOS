@@ -53,6 +53,12 @@ int pojavInit(BOOL useStackQueue) {
 int pojavInitOpenGL() {
     const char *name = getenv("AME_RENDERER");
     ame_renderer_t kind = ame_renderer_from_name(name);
+    if (kind == AME_RENDERER_UNKNOWN) {
+        NSLog(@"pojavInitOpenGL: unsupported renderer %s; falling back to GL4ES", name ?: "<unset>");
+        kind = AME_RENDERER_GL4ES;
+        name = RENDERER_NAME_GL4ES;
+        setenv("AME_RENDERER", name, 1);
+    }
     // auto still unresolved here means the game never asked for a GL version, pick gl4es
     if (kind == AME_RENDERER_AUTO) {
         kind = AME_RENDERER_GL4ES;
