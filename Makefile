@@ -432,6 +432,7 @@ payload: native dep_mg dep_mobilegl dep_mcmetal dep_ame_vulkan java jre assets
 	$(call METHOD_DIRCHECK,$(WORKINGDIR)/AngelAuraAmethyst.app/libs_caciocavallo17)
 	cp -R $(SOURCEDIR)/Natives/resources/en.lproj/LaunchScreen.storyboardc $(WORKINGDIR)/AngelAuraAmethyst.app/Base.lproj/ || exit 1
 	cp -R $(SOURCEDIR)/Natives/resources/* $(WORKINGDIR)/AngelAuraAmethyst.app/ || exit
+	cp $(SOURCEDIR)/Changelog.md $(WORKINGDIR)/AngelAuraAmethyst.app/Changelog.md || exit 1
 	for sub in $(LWJGL_SUBS); do \
 		d=$(WORKINGDIR)/AngelAuraAmethyst.app/Frameworks/$$sub; \
 		[ -d "$$d" ] || continue; \
