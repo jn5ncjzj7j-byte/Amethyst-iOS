@@ -86,15 +86,16 @@ void osm_swap_buffers() {
     if (!currentBundle) return;
     osm_apply_current_ll();
     if (atomic_exchange(&osm_frame_pending, true)) return;
-    amethystRecordRenderedFrame();
-    handle.glFinish(); // this will force osmesa to write the last rendered image into the buffer
+    handle.glFinish();
     osm_render_window_t bundle = currentBundle->osm;
     dispatch_async(dispatch_get_main_queue(), ^{
-    // size comes from the bundle, windowWidth can already be a different value by now
     CGDataProviderRef bitmapProvider = CGDataProviderCreateWithData(NULL, bundle.buffer, bundle.width * bundle.height * 4, NULL);
     CGImageRef bitmap = CGImageCreate(bundle.width, bundle.height, 8, 32, 4 * bundle.width, bundle.color_space, kCGImageAlphaNoneSkipLast | kCGBitmapByteOrderDefault, bitmapProvider, NULL, FALSE, kCGRenderingIntentDefault);
-    SurfaceViewController.surface.layer.contents = (__bridge id)bitmap;
-    CGImageRelease(bitmap);
+    if (bitmap) {
+        SurfaceViewController.surface.layer.contents = (__bridge id)bitmap;
+        amethystRecordRenderedFrame();
+        CGImageRelease(bitmap);
+    }
     CGDataProviderRelease(bitmapProvider);
     atomic_store(&osm_frame_pending, false);
     });
