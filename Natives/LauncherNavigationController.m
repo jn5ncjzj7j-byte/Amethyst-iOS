@@ -500,6 +500,9 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 - (void)versionClosePicker {
     [self.versionTextField endEditing:YES];
     [self pickerView:self.versionPickerView didSelectRow:[self.versionPickerView selectedRowInComponent:0] inComponent:0];
+    if ([self.viewControllers.lastObject isKindOfClass:LauncherHomeViewController.class]) {
+        self.toolbarHidden = YES;
+    }
 }
 
 #pragma mark - View controller UI mode
