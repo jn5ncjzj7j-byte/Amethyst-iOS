@@ -492,7 +492,8 @@
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     CGFloat footerHeight = 154;
-    self.nexaFooterView.frame = CGRectMake(0, self.navigationController.view.bounds.size.height - footerHeight, self.navigationController.view.bounds.size.width, footerHeight);
+    CGFloat footerBottom = self.navigationController.isToolbarHidden ? self.navigationController.view.bounds.size.height : CGRectGetMinY(self.navigationController.toolbar.frame);
+    self.nexaFooterView.frame = CGRectMake(0, footerBottom - footerHeight, self.navigationController.view.bounds.size.width, footerHeight);
     self.clockLabel.frame = CGRectMake(22, 12, self.nexaFooterView.bounds.size.width - 44, 30);
     self.dateLabel.frame = CGRectMake(22, 43, self.nexaFooterView.bounds.size.width - 44, 20);
     CGFloat buttonWidth = (self.nexaFooterView.bounds.size.width - 32) / 3.0;
