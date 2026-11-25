@@ -37,7 +37,8 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = UIColor.systemBackgroundColor;
+    self.view.backgroundColor = [UIColor colorWithRed:13.0/255.0 green:16.0/255.0 blue:25.0/255.0 alpha:1.0];
+    self.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
     if ([getPrefObject(@"control.control_safe_area") length] == 0) {
         setPrefObject(@"control.control_safe_area", NSStringFromUIEdgeInsets(getDefaultSafeArea()));
     }
@@ -53,7 +54,9 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.viewControllers = @[masterVc, detailVc];
     [self changeDisplayModeForSize:self.view.frame.size];
 
-    self.maximumPrimaryColumnWidth = self.view.bounds.size.width * 0.95;
+    self.minimumPrimaryColumnWidth = 236;
+    self.maximumPrimaryColumnWidth = 320;
+    self.preferredPrimaryColumnWidth = 270;
     self.launcherMousePointerView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 22, 22)];
     self.launcherMousePointerView.userInteractionEnabled = NO;
     self.launcherMousePointerView.hidden = YES;
