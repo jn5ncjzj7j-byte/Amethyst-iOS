@@ -105,6 +105,9 @@ static NSString *AMEChangelogHTML(NSString *markdown) {
         NSLog(@"[Changelog] Could not load Changelog.md: %@", error.localizedDescription);
     }
     [self.newsWebView loadHTMLString:AMEChangelogHTML(markdown) baseURL:nil];
+    if (!isJailbroken && getPrefBool(@"warnings.limited_ram_warn") && (roundf(NSProcessInfo.processInfo.physicalMemory / 0x1000000) < 3900)) {
+        [self showWarningAlert:@"limited_ram" hasPreference:YES exitWhenCompleted:NO];
+    }
 
     self.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
     self.navigationItem.rightBarButtonItem = [sidebarViewController drawAccountButton];
@@ -120,6 +123,34 @@ static NSString *AMEChangelogHTML(NSString *markdown) {
     decisionHandler(WKNavigationActionPolicyAllow);
 }
 
+
+- (void)showWarningAlert:(NSString *)key hasPreference:(BOOL)isPreferenced exitWhenCompleted:(BOOL)shouldExit {
+    UIAlertController *warning = [UIAlertController alertControllerWithTitle:localize([NSString stringWithFormat:@"login.warn.title.%@", key], nil) message:localize([NSString stringWithFormat:@"login.warn.message.%@", key], nil) preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *action;
+    if (isPreferenced) {
+        action = [UIAlertAction actionWithTitle:localize(@"OK", nil) style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+            setPrefBool([NSString stringWithFormat:@"warnings.%@_warn", key], NO);
+        }];
+    } else if (shouldExit) {
+        action = [UIAlertAction actionWithTitle:localize(@"OK", nil) style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+            [UIApplication.sharedApplication performSelector:@selector(suspend)];
+            usleep(100 * 1000);
+            exit(0);
+        }];
+    } else {
+        action = [UIAlertAction actionWithTitle:localize(@"OK", nil) style:UIAlertActionStyleCancel handler:nil];
+    }
+    warning.popoverPresentationController.sourceView = self.view;
+    warning.popoverPresentationController.sourceRect = self.view.bounds;
+    [warning addAction:action];
+    [self presentViewController:warning animated:YES completion:nil];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView.contentOffset.x > 0) {
+        scrollView.contentOffset = CGPointMake(0, scrollView.contentOffset.y);
+    }
+}
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
