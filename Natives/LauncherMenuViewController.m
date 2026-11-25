@@ -51,6 +51,10 @@
 
 @implementation LauncherHomeViewController
 
+- (NSString *)imageName {
+    return @"house.fill";
+}
+
 - (instancetype)init {
     self = [super init];
     self.title = @"Home";
@@ -136,7 +140,7 @@
     brand.text = @"NEXA";
     brand.textColor = UIColor.whiteColor;
     brand.font = [UIFont systemFontOfSize:15 weight:UIFontWeightBold];
-    brand.letterSpacing = 3;
+    brand.attributedText = [[NSAttributedString alloc] initWithString:@"NEXA" attributes:@{NSKernAttributeName: @3}];
 
     UILabel *eyebrow = [UILabel new];
     eyebrow.text = @"MINECRAFT JAVA EDITION";
@@ -288,7 +292,7 @@
     brandTitle.text = @"NEXA";
     brandTitle.textColor = UIColor.whiteColor;
     brandTitle.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
-    brandTitle.letterSpacing = 2;
+    brandTitle.attributedText = [[NSAttributedString alloc] initWithString:@"NEXA" attributes:@{NSKernAttributeName: @2}];
     [brandView addSubview:brandOrb];
     [brandView addSubview:brandTitle];
     self.navigationItem.titleView = brandView;
