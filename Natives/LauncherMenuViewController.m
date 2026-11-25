@@ -193,7 +193,18 @@
     heroStack.axis = UILayoutConstraintAxisVertical;
     heroStack.spacing = 20;
     heroStack.translatesAutoresizingMaskIntoConstraints = NO;
+    UIImageView *minecraftBanner = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"MenuProfiles"]];
+    minecraftBanner.translatesAutoresizingMaskIntoConstraints = NO;
+    minecraftBanner.contentMode = UIViewContentModeScaleAspectFit;
+    minecraftBanner.alpha = 0.24;
+    [hero addSubview:minecraftBanner];
     [hero addSubview:heroStack];
+    [NSLayoutConstraint activateConstraints:@[
+        [minecraftBanner.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor constant:-22],
+        [minecraftBanner.topAnchor constraintEqualToAnchor:hero.topAnchor constant:18],
+        [minecraftBanner.widthAnchor constraintEqualToConstant:118],
+        [minecraftBanner.heightAnchor constraintEqualToConstant:118]
+    ]];
 
     [NSLayoutConstraint activateConstraints:@[
         [orb.widthAnchor constraintEqualToConstant:54],
@@ -251,7 +262,10 @@
     NSString *version = profile[@"lastVersionId"] ?: @"Choose a version";
     NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"] ?: @"Default";
     self.profileLabel.text = [NSString stringWithFormat:@"Profile  %@     Renderer  %@", profileName, renderer];
-    self.versionLabel.text = [NSString stringWithFormat:@"Version  %@     Java  Auto     RAM  Auto", version];
+    NSString *javaVersion = [PLProfiles resolveKeyForCurrentProfile:@"javaVersion"] ?: @"0";
+    NSString *runtime = [javaVersion isEqualToString:@"0"] ? @"Auto" : [NSString stringWithFormat:@"Java %@", javaVersion];
+    NSString *ram = getPrefBool(@"java.auto_ram") ? @"Auto" : [NSString stringWithFormat:@"%ld MB", (long)getPrefInt(@"java.allocated_memory")];
+    self.versionLabel.text = [NSString stringWithFormat:@"Version  %@     Java  %@     RAM  %@", version, runtime, ram];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -453,6 +467,10 @@
     [self updateAccountInfo];
     
     return self.accountBtnItem;
+}
+
+- (void)dealloc {
+    [self.clockTimer invalidate];
 }
 
 - (void)restoreHighlightedSelection {
