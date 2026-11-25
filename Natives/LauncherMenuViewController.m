@@ -235,13 +235,13 @@
         [self restoreHighlightedSelection];
         ((LauncherMenuCustomItem *)selected).action();
     } else {
-        if(self.isInitialVc) {
+        if (self.isInitialVc) {
             self.isInitialVc = NO;
         } else {
             self.options[self.lastSelectedIndex].vcArray = contentNavigationController.viewControllers;
-            [contentNavigationController setViewControllers:selected.vcArray animated:NO];
-            self.lastSelectedIndex = indexPath.row;
         }
+        [contentNavigationController setViewControllers:selected.vcArray animated:NO];
+        self.lastSelectedIndex = (int)indexPath.row;
         selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
         if ([selected.vcArray[0] respondsToSelector:@selector(importLocalFile)]) {
             UIImage *sourceImage = [UIImage imageNamed:@"ImportContent"];
