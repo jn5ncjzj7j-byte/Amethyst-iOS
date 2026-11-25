@@ -178,6 +178,12 @@ static NSString *AMEChangelogHTML(NSString *markdown) {
         indicatorInsets.left = sidebarInset;
         scrollView.scrollIndicatorInsets = indicatorInsets;
     }
+
+    CGPoint offset = scrollView.contentOffset;
+    if (fabs(offset.x + sidebarInset) > 0.5) {
+        offset.x = -sidebarInset;
+        scrollView.contentOffset = offset;
+    }
 }
 
 @end
