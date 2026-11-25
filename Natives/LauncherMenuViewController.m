@@ -399,7 +399,7 @@
         [shortcut addTarget:self action:@selector(nexaShortcutTapped:) forControlEvents:UIControlEventPrimaryActionTriggered];
         [self.nexaFooterView addSubview:shortcut];
     }
-    [self.tableView addSubview:self.nexaFooterView];
+    [self.navigationController.view addSubview:self.nexaFooterView];
     [self updateNexaClock];
     self.clockTimer = [NSTimer scheduledTimerWithTimeInterval:30 target:self selector:@selector(updateNexaClock) userInfo:nil repeats:YES];
 
@@ -492,7 +492,7 @@
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     CGFloat footerHeight = 154;
-    self.nexaFooterView.frame = CGRectMake(0, self.tableView.bounds.size.height - footerHeight, self.tableView.bounds.size.width, footerHeight);
+    self.nexaFooterView.frame = CGRectMake(0, self.navigationController.view.bounds.size.height - footerHeight, self.navigationController.view.bounds.size.width, footerHeight);
     self.clockLabel.frame = CGRectMake(22, 12, self.nexaFooterView.bounds.size.width - 44, 30);
     self.dateLabel.frame = CGRectMake(22, 43, self.nexaFooterView.bounds.size.width - 44, 20);
     CGFloat buttonWidth = (self.nexaFooterView.bounds.size.width - 32) / 3.0;
