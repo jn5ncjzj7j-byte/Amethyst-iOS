@@ -497,7 +497,7 @@
     if (sender.tag == 0) {
         openLink(self, [NSURL URLWithString:@"https://github.com/jn5ncjzj7j-byte/Amethyst-iOS"]);
     } else if (sender.tag == 1) {
-        openLink(self, [NSURL URLWithString:@"https://discord.gg/"]);
+        openLink(self, [NSURL URLWithString:@"https://discord.gg/5ptqkyZxEy"]);
     } else {
         [self openOptionAtIndex:3];
     }
@@ -517,6 +517,7 @@
     self.options[self.lastSelectedIndex].vcArray = contentNavigationController.viewControllers;
     [contentNavigationController setViewControllers:selected.vcArray animated:NO];
     if (index < 3) self.lastSelectedIndex = (int)index;
+    contentNavigationController.toolbarHidden = index != 1;
     selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
     selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem];
     selected.vcArray[0].navigationItem.leftItemsSupplementBackButton = YES;
