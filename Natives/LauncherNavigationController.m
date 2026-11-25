@@ -325,10 +325,15 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 }
 
 - (void)showVersionPicker {
+    self.toolbarHidden = NO;
     [self.versionTextField becomeFirstResponder];
 }
 
 - (void)launchSelectedVersionFromHome:(UIButton *)sender {
+    if (!self.versionTextField.hasText) {
+        [self showVersionPicker];
+        return;
+    }
     [self performInstallOrShowDetails:sender];
 }
 
