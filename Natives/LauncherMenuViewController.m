@@ -533,7 +533,11 @@
         selected.action();
         return;
     }
-    self.options[self.activeOptionIndex].vcArray = contentNavigationController.viewControllers;
+    if (self.isInitialVc) {
+        self.isInitialVc = NO;
+    } else {
+        self.options[self.activeOptionIndex].vcArray = contentNavigationController.viewControllers;
+    }
     [contentNavigationController setViewControllers:selected.vcArray animated:NO];
     self.activeOptionIndex = index;
     if (index < 3) self.lastSelectedIndex = (int)index;
