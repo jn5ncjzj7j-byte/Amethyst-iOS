@@ -573,8 +573,8 @@
 
 - (void)openOptionAtIndex:(NSUInteger)index {
     if (index >= self.options.count) return;
-    NSIndexPath *path = [NSIndexPath indexPathForRow:index < 3 ? index : self.lastSelectedIndex inSection:0];
     if (index < 3) {
+        NSIndexPath *path = [NSIndexPath indexPathForRow:index inSection:0];
         [self.tableView selectRowAtIndexPath:path animated:NO scrollPosition:UITableViewScrollPositionNone];
     }
     LauncherMenuCustomItem *selected = self.options[index];
