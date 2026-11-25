@@ -1,5 +1,6 @@
 #import <WebKit/WebKit.h>
 #import <math.h>
+#include <unistd.h>
 #import "LauncherMenuViewController.h"
 #import "LauncherNewsViewController.h"
 #import "LauncherPreferences.h"
