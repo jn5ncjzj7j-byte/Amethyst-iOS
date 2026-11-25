@@ -63,6 +63,13 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     toolbar.scrollEdgeAppearance = toolbarAppearance;
     toolbar.translucent = NO;
     toolbar.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
+
+    UITableView *tableAppearance = UITableView.appearance;
+    tableAppearance.backgroundColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    tableAppearance.separatorColor = [UIColor colorWithRed:43.0/255.0 green:37.0/255.0 blue:65.0/255.0 alpha:1.0];
+    UITableViewCell.appearance.backgroundColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    UISearchBar.appearance.barTintColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    UISearchBar.appearance.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
     if ([getPrefObject(@"control.control_safe_area") length] == 0) {
         setPrefObject(@"control.control_safe_area", NSStringFromUIEdgeInsets(getDefaultSafeArea()));
     }
