@@ -132,7 +132,7 @@
 
     UIView *orb = [UIView new];
     orb.translatesAutoresizingMaskIntoConstraints = NO;
-    orb.layer.cornerRadius = 27;
+    orb.layer.cornerRadius = 21;
     orb.backgroundColor = [UIColor colorWithRed:133.0/255.0 green:83.0/255.0 blue:220.0/255.0 alpha:1.0];
     orb.layer.shadowColor = [UIColor colorWithRed:125.0/255.0 green:82.0/255.0 blue:240.0/255.0 alpha:1.0].CGColor;
     orb.layer.shadowOpacity = 0.55;
@@ -153,7 +153,7 @@
     UILabel *heading = [UILabel new];
     heading.text = @"Your world. Your rules.";
     heading.textColor = UIColor.whiteColor;
-    heading.font = [UIFont systemFontOfSize:30 weight:UIFontWeightBold];
+    heading.font = [UIFont systemFontOfSize:26 weight:UIFontWeightBold];
     heading.numberOfLines = 2;
 
     self.profileLabel = [UILabel new];
@@ -171,6 +171,7 @@
     NSMutableArray<UILabel *> *metadataValues = [NSMutableArray array];
     for (NSString *metadataTitle in metadataTitles) {
         UIView *metadataCard = [UIView new];
+        metadataCard.translatesAutoresizingMaskIntoConstraints = NO;
         metadataCard.backgroundColor = [UIColor colorWithRed:37.0/255.0 green:32.0/255.0 blue:59.0/255.0 alpha:1.0];
         metadataCard.layer.cornerRadius = 11;
         UILabel *titleLabel = [UILabel new];
@@ -195,7 +196,7 @@
             [valueLabel.trailingAnchor constraintEqualToAnchor:metadataCard.trailingAnchor constant:-6],
             [valueLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:4],
             [valueLabel.bottomAnchor constraintLessThanOrEqualToAnchor:metadataCard.bottomAnchor constant:-7],
-            [metadataCard.heightAnchor constraintEqualToConstant:56]
+            [metadataCard.heightAnchor constraintEqualToConstant:50]
         ]];
         [metadataValues addObject:valueLabel];
         [metadataRow addArrangedSubview:metadataCard];
@@ -227,15 +228,15 @@
     UIStackView *brandRow = [[UIStackView alloc] initWithArrangedSubviews:@[orb, brand]];
     brandRow.axis = UILayoutConstraintAxisHorizontal;
     brandRow.alignment = UIStackViewAlignmentCenter;
-    brandRow.spacing = 12;
+    brandRow.spacing = 10;
 
     UIStackView *details = [[UIStackView alloc] initWithArrangedSubviews:@[eyebrow, heading, self.profileLabel, metadataRow, versionButton, play]];
     details.axis = UILayoutConstraintAxisVertical;
-    details.spacing = 11;
+    details.spacing = 8;
 
     UIStackView *heroStack = [[UIStackView alloc] initWithArrangedSubviews:@[brandRow, details]];
     heroStack.axis = UILayoutConstraintAxisVertical;
-    heroStack.spacing = 20;
+    heroStack.spacing = 12;
     heroStack.translatesAutoresizingMaskIntoConstraints = NO;
     UIImageView *minecraftBanner = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"MenuProfiles"]];
     minecraftBanner.translatesAutoresizingMaskIntoConstraints = NO;
@@ -251,13 +252,13 @@
     ]];
 
     [NSLayoutConstraint activateConstraints:@[
-        [orb.widthAnchor constraintEqualToConstant:54],
-        [orb.heightAnchor constraintEqualToConstant:54],
-        [play.heightAnchor constraintEqualToConstant:54],
-        [heroStack.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor constant:24],
-        [heroStack.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor constant:-24],
-        [heroStack.topAnchor constraintEqualToAnchor:hero.topAnchor constant:22],
-        [heroStack.bottomAnchor constraintEqualToAnchor:hero.bottomAnchor constant:-22]
+        [orb.widthAnchor constraintEqualToConstant:42],
+        [orb.heightAnchor constraintEqualToConstant:42],
+        [play.heightAnchor constraintEqualToConstant:46],
+        [heroStack.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor constant:18],
+        [heroStack.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor constant:-18],
+        [heroStack.topAnchor constraintEqualToAnchor:hero.topAnchor constant:16],
+        [heroStack.bottomAnchor constraintEqualToAnchor:hero.bottomAnchor constant:-16]
     ]];
 
     [self.contentStack addArrangedSubview:hero];
