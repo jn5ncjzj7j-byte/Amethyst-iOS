@@ -44,12 +44,12 @@
 
 
 @interface LauncherHomeViewController ()
-@property(nonatomic) UILabel *profileLabel;
 @property(nonatomic) UILabel *versionValueLabel;
 @property(nonatomic) UILabel *runtimeValueLabel;
 @property(nonatomic) UILabel *rendererValueLabel;
 @property(nonatomic) UILabel *ramValueLabel;
 @property(nonatomic) UIStackView *contentStack;
+@property(nonatomic) UIButton *versionButton;
 @end
 
 @implementation LauncherHomeViewController
@@ -64,20 +64,42 @@
     return self;
 }
 
+- (UIColor *)nexaColorRed:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue {
+    return [UIColor colorWithRed:red / 255.0 green:green / 255.0 blue:blue / 255.0 alpha:1.0];
+}
+
+- (UILabel *)labelWithText:(NSString *)text size:(CGFloat)size weight:(UIFontWeight)weight color:(UIColor *)color {
+    UILabel *label = [UILabel new];
+    label.text = text;
+    label.font = [UIFont systemFontOfSize:size weight:weight];
+    label.textColor = color;
+    label.numberOfLines = 1;
+    return label;
+}
+
+- (void)styleFlatPanel:(UIView *)view radius:(CGFloat)radius {
+    view.backgroundColor = [self nexaColorRed:15 green:15 blue:31];
+    view.layer.cornerRadius = radius;
+    view.layer.borderWidth = 1;
+    view.layer.borderColor = [self nexaColorRed:54 green:43 blue:91].CGColor;
+    view.layer.masksToBounds = YES;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:10.0/255.0 green:12.0/255.0 blue:22.0/255.0 alpha:1.0];
-    self.navigationItem.title = @"NEXA";
+    self.view.backgroundColor = [self nexaColorRed:5 green:6 blue:16];
+    self.navigationItem.title = @"";
     self.navigationItem.rightBarButtonItem = [sidebarViewController drawAccountButton];
 
     UIScrollView *scrollView = [UIScrollView new];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
+    scrollView.alwaysBounceVertical = YES;
     [self.view addSubview:scrollView];
 
-    self.contentStack = [[UIStackView alloc] init];
-    self.contentStack.axis = UILayoutConstraintAxisVertical;
-    self.contentStack.spacing = 20;
+    self.contentStack = [UIStackView new];
     self.contentStack.translatesAutoresizingMaskIntoConstraints = NO;
+    self.contentStack.axis = UILayoutConstraintAxisVertical;
+    self.contentStack.spacing = 16;
     [scrollView addSubview:self.contentStack];
 
     [NSLayoutConstraint activateConstraints:@[
@@ -85,232 +107,340 @@
         [scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         [scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-        [self.contentStack.leadingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.leadingAnchor constant:28],
-        [self.contentStack.trailingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.trailingAnchor constant:-28],
-        [self.contentStack.topAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.topAnchor constant:26],
-        [self.contentStack.bottomAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.bottomAnchor constant:-28],
-        [self.contentStack.widthAnchor constraintEqualToAnchor:scrollView.frameLayoutGuide.widthAnchor constant:-56]
+        [self.contentStack.leadingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.leadingAnchor constant:24],
+        [self.contentStack.trailingAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.trailingAnchor constant:-24],
+        [self.contentStack.topAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.topAnchor constant:18],
+        [self.contentStack.bottomAnchor constraintEqualToAnchor:scrollView.contentLayoutGuide.bottomAnchor constant:-24],
+        [self.contentStack.widthAnchor constraintEqualToAnchor:scrollView.frameLayoutGuide.widthAnchor constant:-48]
     ]];
 
     [self buildHero];
+    [self buildLaunchControls];
+    [self buildMetadata];
     [self buildFeatureSection];
     [self buildNewsCard];
     [self refreshProfileInformation];
 }
 
-- (UIView *)makeCardWithTitle:(NSString *)title subtitle:(NSString *)subtitle symbol:(NSString *)symbol action:(NSUInteger)index {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.backgroundColor = [UIColor colorWithRed:24.0/255.0 green:27.0/255.0 blue:43.0/255.0 alpha:1.0];
-    button.layer.cornerRadius = 18;
-    button.layer.borderWidth = 1;
-    button.layer.borderColor = [UIColor colorWithRed:91.0/255.0 green:76.0/255.0 blue:145.0/255.0 alpha:0.35].CGColor;
-    button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    button.titleLabel.numberOfLines = 2;
-    button.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
-    [button setTitle:[NSString stringWithFormat:@"%@\n%@", title, subtitle] forState:UIControlStateNormal];
-    [button setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-    button.titleEdgeInsets = UIEdgeInsetsMake(62, 16, 12, 10);
-    UIImageView *iconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:symbol]];
-    iconView.tintColor = [UIColor colorWithRed:174.0/255.0 green:133.0/255.0 blue:255.0/255.0 alpha:1.0];
-    iconView.contentMode = UIViewContentModeScaleAspectFit;
-    iconView.frame = CGRectMake(16, 17, 30, 30);
-    [button addSubview:iconView];
-    [button addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
-        [sidebarViewController openOptionAtIndex:index];
-    }] forControlEvents:UIControlEventPrimaryActionTriggered];
-    [button.heightAnchor constraintGreaterThanOrEqualToConstant:142].active = YES;
-    return button;
+- (UIView *)makeCosmicHero {
+    UIView *hero = [UIView new];
+    hero.translatesAutoresizingMaskIntoConstraints = NO;
+    hero.backgroundColor = [self nexaColorRed:5 green:7 blue:21];
+    hero.layer.cornerRadius = 24;
+    hero.layer.borderWidth = 1;
+    hero.layer.borderColor = [self nexaColorRed:69 green:56 blue:124].CGColor;
+    hero.clipsToBounds = YES;
+
+    CAGradientLayer *sky = [CAGradientLayer layer];
+    sky.frame = CGRectMake(0, 0, 1200, 270);
+    sky.colors = @[
+        (id)[self nexaColorRed:3 green:5 blue:17].CGColor,
+        (id)[self nexaColorRed:18 green:14 blue:46].CGColor,
+        (id)[self nexaColorRed:44 green:24 blue:77].CGColor
+    ];
+    sky.locations = @[@0.0, @0.65, @1.0];
+    [hero.layer addSublayer:sky];
+
+    for (NSUInteger i = 0; i < 42; i++) {
+        CGFloat x = (CGFloat)((i * 137 + 29) % 997) / 997.0;
+        CGFloat y = (CGFloat)((i * 83 + 17) % 211) / 270.0;
+        CGFloat diameter = (i % 7 == 0) ? 2.4 : 1.3;
+        UIView *star = [[UIView alloc] initWithFrame:CGRectMake(x * 1200, y * 270, diameter, diameter)];
+        star.backgroundColor = [UIColor colorWithWhite:1 alpha:(i % 5 == 0) ? 0.95 : 0.55];
+        star.layer.cornerRadius = diameter / 2.0;
+        [hero addSubview:star];
+    }
+
+    UIView *planet = [UIView new];
+    planet.translatesAutoresizingMaskIntoConstraints = NO;
+    planet.backgroundColor = [self nexaColorRed:16 green:19 blue:49];
+    planet.layer.cornerRadius = 150;
+    planet.layer.borderWidth = 2;
+    planet.layer.borderColor = [self nexaColorRed:129 green:151 blue:255].CGColor;
+    planet.layer.shadowColor = [self nexaColorRed:115 green:91 blue:255].CGColor;
+    planet.layer.shadowOpacity = 0.9;
+    planet.layer.shadowRadius = 32;
+    planet.layer.shadowOffset = CGSizeZero;
+
+    CAGradientLayer *planetShade = [CAGradientLayer layer];
+    planetShade.frame = CGRectMake(0, 0, 300, 300);
+    planetShade.cornerRadius = 150;
+    planetShade.colors = @[
+        (id)[self nexaColorRed:94 green:117 blue:188].CGColor,
+        (id)[self nexaColorRed:35 green:39 blue:84].CGColor,
+        (id)[self nexaColorRed:7 green:8 blue:24].CGColor
+    ];
+    planetShade.startPoint = CGPointMake(0.35, 0);
+    planetShade.endPoint = CGPointMake(0.68, 1);
+    [planet.layer addSublayer:planetShade];
+
+    UIView *horizon = [UIView new];
+    horizon.translatesAutoresizingMaskIntoConstraints = NO;
+    CAGradientLayer *horizonGlow = [CAGradientLayer layer];
+    horizonGlow.colors = @[
+        (id)[UIColor colorWithRed:0.31 green:0.19 blue:0.75 alpha:0.0].CGColor,
+        (id)[UIColor colorWithRed:0.62 green:0.34 blue:1.0 alpha:0.72].CGColor,
+        (id)[UIColor colorWithRed:0.86 green:0.55 blue:1.0 alpha:0.0].CGColor
+    ];
+    horizonGlow.startPoint = CGPointMake(0, 0.5);
+    horizonGlow.endPoint = CGPointMake(1, 0.5);
+    [horizon.layer addSublayer:horizonGlow];
+    [hero addSubview:planet];
+    [hero addSubview:horizon];
+    [NSLayoutConstraint activateConstraints:@[
+        [planet.widthAnchor constraintEqualToConstant:300],
+        [planet.heightAnchor constraintEqualToConstant:300],
+        [planet.centerXAnchor constraintEqualToAnchor:hero.centerXAnchor constant:110],
+        [planet.centerYAnchor constraintEqualToAnchor:hero.bottomAnchor constant:18],
+        [horizon.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor],
+        [horizon.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor],
+        [horizon.bottomAnchor constraintEqualToAnchor:hero.bottomAnchor constant:-42],
+        [horizon.heightAnchor constraintEqualToConstant:34]
+    ]];
+    [hero bringSubviewToFront:horizon];
+
+    UILabel *edition = [self labelWithText:@"NEXA  /  MINECRAFT JAVA EDITION" size:12 weight:UIFontWeightBold color:[self nexaColorRed:196 green:171 blue:255]];
+    UILabel *title = [self labelWithText:@"Your next world starts here." size:27 weight:UIFontWeightBold color:UIColor.whiteColor];
+    UILabel *subtitle = [self labelWithText:@"A launcher built around your Minecraft experience." size:14 weight:UIFontWeightMedium color:[self nexaColorRed:197 green:190 blue:222]];
+    edition.translatesAutoresizingMaskIntoConstraints = NO;
+    title.translatesAutoresizingMaskIntoConstraints = NO;
+    subtitle.translatesAutoresizingMaskIntoConstraints = NO;
+    [hero addSubview:edition];
+    [hero addSubview:title];
+    [hero addSubview:subtitle];
+    [NSLayoutConstraint activateConstraints:@[
+        [edition.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor constant:26],
+        [edition.topAnchor constraintEqualToAnchor:hero.topAnchor constant:28],
+        [title.leadingAnchor constraintEqualToAnchor:edition.leadingAnchor],
+        [title.topAnchor constraintEqualToAnchor:edition.bottomAnchor constant:10],
+        [title.trailingAnchor constraintLessThanOrEqualToAnchor:hero.trailingAnchor constant:-24],
+        [subtitle.leadingAnchor constraintEqualToAnchor:edition.leadingAnchor],
+        [subtitle.topAnchor constraintEqualToAnchor:title.bottomAnchor constant:8],
+        [subtitle.trailingAnchor constraintLessThanOrEqualToAnchor:hero.trailingAnchor constant:-24]
+    ]];
+    return hero;
 }
 
 - (void)buildHero {
-    UIView *hero = [UIView new];
-    hero.translatesAutoresizingMaskIntoConstraints = NO;
-    hero.backgroundColor = [UIColor colorWithRed:25.0/255.0 green:20.0/255.0 blue:48.0/255.0 alpha:1.0];
-    hero.layer.cornerRadius = 26;
-    hero.layer.borderWidth = 1;
-    hero.layer.borderColor = [UIColor colorWithRed:117.0/255.0 green:83.0/255.0 blue:194.0/255.0 alpha:0.55].CGColor;
+    UIView *hero = [self makeCosmicHero];
+    [self.contentStack addArrangedSubview:hero];
+    [hero.heightAnchor constraintEqualToConstant:218].active = YES;
+}
 
-    UIView *orb = [UIView new];
-    orb.translatesAutoresizingMaskIntoConstraints = NO;
-    orb.layer.cornerRadius = 21;
-    orb.backgroundColor = [UIColor colorWithRed:133.0/255.0 green:83.0/255.0 blue:220.0/255.0 alpha:1.0];
-    orb.layer.shadowColor = [UIColor colorWithRed:125.0/255.0 green:82.0/255.0 blue:240.0/255.0 alpha:1.0].CGColor;
-    orb.layer.shadowOpacity = 0.55;
-    orb.layer.shadowRadius = 22;
-    orb.layer.shadowOffset = CGSizeZero;
+- (void)buildLaunchControls {
+    UIStackView *row = [UIStackView new];
+    row.translatesAutoresizingMaskIntoConstraints = NO;
+    row.axis = UILayoutConstraintAxisHorizontal;
+    row.spacing = 14;
+    row.alignment = UIStackViewAlignmentFill;
+    row.distribution = UIStackViewDistributionFill;
 
-    UILabel *brand = [UILabel new];
-    brand.text = @"NEXA";
-    brand.textColor = UIColor.whiteColor;
-    brand.font = [UIFont systemFontOfSize:15 weight:UIFontWeightBold];
-    brand.attributedText = [[NSAttributedString alloc] initWithString:@"NEXA" attributes:@{NSKernAttributeName: @3}];
+    self.versionButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    self.versionButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.versionButton.backgroundColor = [self nexaColorRed:20 green:18 blue:39];
+    self.versionButton.layer.cornerRadius = 14;
+    self.versionButton.layer.borderWidth = 1;
+    self.versionButton.layer.borderColor = [self nexaColorRed:80 green:62 blue:132].CGColor;
+    self.versionButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    [self.versionButton setTitle:@"  Select version" forState:UIControlStateNormal];
+    [self.versionButton setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
+    self.versionButton.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    UIImage *versionIcon = [UIImage systemImageNamed:@"cube.fill"];
+    [self.versionButton setImage:versionIcon forState:UIControlStateNormal];
+    self.versionButton.tintColor = [self nexaColorRed:175 green:119 blue:255];
+    self.versionButton.imageEdgeInsets = UIEdgeInsetsMake(0, 14, 0, 10);
+    self.versionButton.titleEdgeInsets = UIEdgeInsetsMake(0, 20, 0, 0);
+    [self.versionButton addTarget:self action:@selector(selectVersion) forControlEvents:UIControlEventTouchUpInside];
 
-    UILabel *eyebrow = [UILabel new];
-    eyebrow.text = @"MINECRAFT JAVA EDITION";
-    eyebrow.textColor = [UIColor colorWithRed:185.0/255.0 green:165.0/255.0 blue:231.0/255.0 alpha:1.0];
-    eyebrow.font = [UIFont systemFontOfSize:12 weight:UIFontWeightSemibold];
-
-    UILabel *heading = [UILabel new];
-    heading.text = @"Your world. Your rules.";
-    heading.textColor = UIColor.whiteColor;
-    heading.font = [UIFont systemFontOfSize:26 weight:UIFontWeightBold];
-    heading.numberOfLines = 2;
-
-    self.profileLabel = [UILabel new];
-    self.profileLabel.textColor = [UIColor colorWithWhite:0.88 alpha:1.0];
-    self.profileLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-
-    self.profileLabel.text = @"Profile";
-
-    UIStackView *metadataRow = [[UIStackView alloc] init];
-    metadataRow.axis = UILayoutConstraintAxisHorizontal;
-    metadataRow.spacing = 8;
-    metadataRow.distribution = UIStackViewDistributionFillEqually;
-
-    NSArray *metadataTitles = @[@"VERSION", @"JAVA", @"RENDERER", @"RAM"];
-    NSMutableArray<UILabel *> *metadataValues = [NSMutableArray array];
-    for (NSString *metadataTitle in metadataTitles) {
-        UIView *metadataCard = [UIView new];
-        metadataCard.translatesAutoresizingMaskIntoConstraints = NO;
-        metadataCard.backgroundColor = [UIColor colorWithRed:37.0/255.0 green:32.0/255.0 blue:59.0/255.0 alpha:1.0];
-        metadataCard.layer.cornerRadius = 11;
-        UILabel *titleLabel = [UILabel new];
-        titleLabel.text = metadataTitle;
-        titleLabel.textColor = [UIColor colorWithWhite:0.62 alpha:1.0];
-        titleLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
-        UILabel *valueLabel = [UILabel new];
-        valueLabel.textColor = UIColor.whiteColor;
-        valueLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
-        valueLabel.adjustsFontSizeToFitWidth = YES;
-        valueLabel.minimumScaleFactor = 0.75;
-        valueLabel.lineBreakMode = NSLineBreakByTruncatingTail;
-        [metadataCard addSubview:titleLabel];
-        [metadataCard addSubview:valueLabel];
-        titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        [NSLayoutConstraint activateConstraints:@[
-            [titleLabel.leadingAnchor constraintEqualToAnchor:metadataCard.leadingAnchor constant:10],
-            [titleLabel.trailingAnchor constraintEqualToAnchor:metadataCard.trailingAnchor constant:-6],
-            [titleLabel.topAnchor constraintEqualToAnchor:metadataCard.topAnchor constant:8],
-            [valueLabel.leadingAnchor constraintEqualToAnchor:metadataCard.leadingAnchor constant:10],
-            [valueLabel.trailingAnchor constraintEqualToAnchor:metadataCard.trailingAnchor constant:-6],
-            [valueLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:4],
-            [valueLabel.bottomAnchor constraintLessThanOrEqualToAnchor:metadataCard.bottomAnchor constant:-7],
-            [metadataCard.heightAnchor constraintEqualToConstant:50]
-        ]];
-        [metadataValues addObject:valueLabel];
-        [metadataRow addArrangedSubview:metadataCard];
-    }
-    self.versionValueLabel = metadataValues[0];
-    self.runtimeValueLabel = metadataValues[1];
-    self.rendererValueLabel = metadataValues[2];
-    self.ramValueLabel = metadataValues[3];
-
-    UIButton *versionButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [versionButton setTitle:@"Change version" forState:UIControlStateNormal];
-    [versionButton setTitleColor:[UIColor colorWithRed:198.0/255.0 green:169.0/255.0 blue:255.0/255.0 alpha:1.0] forState:UIControlStateNormal];
-    versionButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-    [versionButton addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
-        [(LauncherNavigationController *)self.splitViewController.viewControllers[1] showVersionPicker];
-    }] forControlEvents:UIControlEventPrimaryActionTriggered];
-
-    UIButton *play = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *play = [UIButton buttonWithType:UIButtonTypeCustom];
     play.translatesAutoresizingMaskIntoConstraints = NO;
-    play.backgroundColor = [UIColor colorWithRed:137.0/255.0 green:86.0/255.0 blue:224.0/255.0 alpha:1.0];
-    play.layer.cornerRadius = 15;
+    play.backgroundColor = [self nexaColorRed:117 green:49 blue:232];
+    play.layer.cornerRadius = 14;
+    play.layer.borderWidth = 1;
+    play.layer.borderColor = [self nexaColorRed:174 green:117 blue:255].CGColor;
     [play setTitle:@"Play" forState:UIControlStateNormal];
     [play setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-    play.titleLabel.font = [UIFont systemFontOfSize:19 weight:UIFontWeightBold];
-    [play addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
-        [(LauncherNavigationController *)self.splitViewController.viewControllers[1] launchSelectedVersionFromHome:play];
+    play.titleLabel.font = [UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+    [play setImage:[UIImage systemImageNamed:@"play.fill"] forState:UIControlStateNormal];
+    play.tintColor = UIColor.whiteColor;
+    play.imageEdgeInsets = UIEdgeInsetsMake(0, -8, 0, 8);
+    [play addTarget:self action:@selector(playSelectedVersion:) forControlEvents:UIControlEventTouchUpInside];
+
+    [row addArrangedSubview:self.versionButton];
+    [row addArrangedSubview:play];
+    [self.contentStack addArrangedSubview:row];
+    [self.versionButton.widthAnchor constraintGreaterThanOrEqualToAnchor:row.widthAnchor multiplier:0.52].active = YES;
+    [play.heightAnchor constraintEqualToConstant:62].active = YES;
+    [self.versionButton.heightAnchor constraintEqualToConstant:62].active = YES;
+}
+
+- (void)selectVersion {
+    LauncherNavigationController *navigation = (LauncherNavigationController *)self.splitViewController.viewControllers.lastObject;
+    [navigation showVersionPicker];
+}
+
+- (void)playSelectedVersion:(UIButton *)sender {
+    LauncherNavigationController *navigation = (LauncherNavigationController *)self.splitViewController.viewControllers.lastObject;
+    [navigation launchSelectedVersionFromHome:sender];
+}
+
+- (UIView *)metadataCardWithTitle:(NSString *)title valueLabel:(UILabel **)valueLabel symbol:(NSString *)symbol {
+    UIView *card = [UIView new];
+    card.translatesAutoresizingMaskIntoConstraints = NO;
+    [self styleFlatPanel:card radius:13];
+
+    UIImageView *icon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:symbol]];
+    icon.translatesAutoresizingMaskIntoConstraints = NO;
+    icon.tintColor = [self nexaColorRed:170 green:105 blue:255];
+    icon.contentMode = UIViewContentModeScaleAspectFit;
+
+    UILabel *caption = [self labelWithText:title.uppercaseString size:10 weight:UIFontWeightBold color:[self nexaColorRed:139 green:133 blue:160]];
+    caption.translatesAutoresizingMaskIntoConstraints = NO;
+    UILabel *value = [self labelWithText:@"—" size:14 weight:UIFontWeightSemibold color:UIColor.whiteColor];
+    value.translatesAutoresizingMaskIntoConstraints = NO;
+    value.adjustsFontSizeToFitWidth = YES;
+    value.minimumScaleFactor = 0.72;
+    *valueLabel = value;
+
+    [card addSubview:icon];
+    [card addSubview:caption];
+    [card addSubview:value];
+    [NSLayoutConstraint activateConstraints:@[
+        [icon.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:12],
+        [icon.centerYAnchor constraintEqualToAnchor:card.centerYAnchor],
+        [icon.widthAnchor constraintEqualToConstant:23],
+        [icon.heightAnchor constraintEqualToConstant:23],
+        [caption.leadingAnchor constraintEqualToAnchor:icon.trailingAnchor constant:10],
+        [caption.topAnchor constraintEqualToAnchor:card.topAnchor constant:11],
+        [caption.trailingAnchor constraintLessThanOrEqualToAnchor:card.trailingAnchor constant:-8],
+        [value.leadingAnchor constraintEqualToAnchor:caption.leadingAnchor],
+        [value.topAnchor constraintEqualToAnchor:caption.bottomAnchor constant:4],
+        [value.trailingAnchor constraintLessThanOrEqualToAnchor:card.trailingAnchor constant:-8],
+        [value.bottomAnchor constraintLessThanOrEqualToAnchor:card.bottomAnchor constant:-8],
+        [card.heightAnchor constraintEqualToConstant:64]
+    ]];
+    return card;
+}
+
+- (void)buildMetadata {
+    UIStackView *row = [UIStackView new];
+    row.axis = UILayoutConstraintAxisHorizontal;
+    row.spacing = 10;
+    row.distribution = UIStackViewDistributionFillEqually;
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Java" valueLabel:&_runtimeValueLabel symbol:@"cup.and.saucer.fill"]];
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Renderer" valueLabel:&_rendererValueLabel symbol:@"display"]];
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Memory" valueLabel:&_ramValueLabel symbol:@"memorychip"]];
+    [self.contentStack addArrangedSubview:row];
+}
+
+- (UIView *)makeFeatureCard:(NSString *)title subtitle:(NSString *)subtitle symbol:(NSString *)symbol index:(NSUInteger)index {
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+    button.backgroundColor = [self nexaColorRed:15 green:15 blue:31];
+    button.layer.cornerRadius = 16;
+    button.layer.borderWidth = 1;
+    button.layer.borderColor = [self nexaColorRed:54 green:43 blue:91].CGColor;
+    button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+
+    UIImageView *icon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:symbol]];
+    icon.translatesAutoresizingMaskIntoConstraints = NO;
+    icon.tintColor = [self nexaColorRed:174 green:105 blue:255];
+    icon.contentMode = UIViewContentModeScaleAspectFit;
+
+    UILabel *name = [self labelWithText:title size:16 weight:UIFontWeightSemibold color:UIColor.whiteColor];
+    name.translatesAutoresizingMaskIntoConstraints = NO;
+    UILabel *detail = [self labelWithText:subtitle size:12 weight:UIFontWeightMedium color:[self nexaColorRed:160 green:151 blue:185]];
+    detail.translatesAutoresizingMaskIntoConstraints = NO;
+
+    [button addSubview:icon];
+    [button addSubview:name];
+    [button addSubview:detail];
+    [NSLayoutConstraint activateConstraints:@[
+        [icon.leadingAnchor constraintEqualToAnchor:button.leadingAnchor constant:16],
+        [icon.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
+        [icon.widthAnchor constraintEqualToConstant:31],
+        [icon.heightAnchor constraintEqualToConstant:31],
+        [name.leadingAnchor constraintEqualToAnchor:icon.trailingAnchor constant:12],
+        [name.topAnchor constraintEqualToAnchor:button.topAnchor constant:20],
+        [name.trailingAnchor constraintLessThanOrEqualToAnchor:button.trailingAnchor constant:-10],
+        [detail.leadingAnchor constraintEqualToAnchor:name.leadingAnchor],
+        [detail.topAnchor constraintEqualToAnchor:name.bottomAnchor constant:5],
+        [detail.trailingAnchor constraintLessThanOrEqualToAnchor:button.trailingAnchor constant:-8]
+    ]];
+    [button.heightAnchor constraintEqualToConstant:94].active = YES;
+    [button addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
+        [sidebarViewController openOptionAtIndex:index];
     }] forControlEvents:UIControlEventPrimaryActionTriggered];
-
-    UIStackView *brandRow = [[UIStackView alloc] initWithArrangedSubviews:@[orb, brand]];
-    brandRow.axis = UILayoutConstraintAxisHorizontal;
-    brandRow.alignment = UIStackViewAlignmentCenter;
-    brandRow.spacing = 10;
-
-    UIStackView *details = [[UIStackView alloc] initWithArrangedSubviews:@[eyebrow, heading, self.profileLabel, metadataRow, versionButton, play]];
-    details.axis = UILayoutConstraintAxisVertical;
-    details.spacing = 8;
-
-    UIStackView *heroStack = [[UIStackView alloc] initWithArrangedSubviews:@[brandRow, details]];
-    heroStack.axis = UILayoutConstraintAxisVertical;
-    heroStack.spacing = 12;
-    heroStack.translatesAutoresizingMaskIntoConstraints = NO;
-    UIImageView *minecraftBanner = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"MenuProfiles"]];
-    minecraftBanner.translatesAutoresizingMaskIntoConstraints = NO;
-    minecraftBanner.contentMode = UIViewContentModeScaleAspectFit;
-    minecraftBanner.alpha = 0.24;
-    [hero addSubview:minecraftBanner];
-    [hero addSubview:heroStack];
-    [NSLayoutConstraint activateConstraints:@[
-        [minecraftBanner.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor constant:-22],
-        [minecraftBanner.topAnchor constraintEqualToAnchor:hero.topAnchor constant:18],
-        [minecraftBanner.widthAnchor constraintEqualToConstant:118],
-        [minecraftBanner.heightAnchor constraintEqualToConstant:118]
-    ]];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [orb.widthAnchor constraintEqualToConstant:42],
-        [orb.heightAnchor constraintEqualToConstant:42],
-        [play.heightAnchor constraintEqualToConstant:46],
-        [heroStack.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor constant:18],
-        [heroStack.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor constant:-18],
-        [heroStack.topAnchor constraintEqualToAnchor:hero.topAnchor constant:16],
-        [heroStack.bottomAnchor constraintEqualToAnchor:hero.bottomAnchor constant:-16]
-    ]];
-
-    [self.contentStack addArrangedSubview:hero];
+    return button;
 }
 
 - (void)buildFeatureSection {
-    UILabel *heading = [UILabel new];
-    heading.text = @"Your launcher";
-    heading.textColor = UIColor.whiteColor;
-    heading.font = [UIFont systemFontOfSize:22 weight:UIFontWeightBold];
-    [self.contentStack addArrangedSubview:heading];
-
-    UIStackView *row = [[UIStackView alloc] initWithArrangedSubviews:@[
-        [self makeCardWithTitle:@"Mods" subtitle:@"Discover and manage" symbol:@"puzzlepiece.extension" action:4],
-        [self makeCardWithTitle:@"Resource Packs" subtitle:@"Installed packs" symbol:@"square.stack.3d.up" action:5],
-        [self makeCardWithTitle:@"Shaders" subtitle:@"Visual settings" symbol:@"sun.max" action:6]
-    ]];
+    UIStackView *row = [UIStackView new];
     row.axis = UILayoutConstraintAxisHorizontal;
-    row.spacing = 14;
+    row.spacing = 12;
     row.distribution = UIStackViewDistributionFillEqually;
+    [row addArrangedSubview:[self makeFeatureCard:@"Mods" subtitle:@"Manage mods" symbol:@"puzzlepiece.extension.fill" index:4]];
+    [row addArrangedSubview:[self makeFeatureCard:@"Resource Packs" subtitle:@"Customize visuals" symbol:@"folder.fill" index:5]];
+    [row addArrangedSubview:[self makeFeatureCard:@"Shaders" subtitle:@"Graphics settings" symbol:@"sparkles" index:6]];
     [self.contentStack addArrangedSubview:row];
 }
 
 - (void)buildNewsCard {
-    UIButton *news = [UIButton buttonWithType:UIButtonTypeCustom];
-    news.backgroundColor = [UIColor colorWithRed:20.0/255.0 green:23.0/255.0 blue:36.0/255.0 alpha:1.0];
-    news.layer.cornerRadius = 18;
-    news.layer.borderWidth = 1;
-    news.layer.borderColor = [UIColor colorWithWhite:1 alpha:0.08].CGColor;
-    news.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-    [news setTitle:@"News & Updates\nRead the latest NEXA and launcher updates" forState:UIControlStateNormal];
-    [news setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-    news.titleLabel.numberOfLines = 2;
-    news.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
-    news.titleEdgeInsets = UIEdgeInsetsMake(12, 20, 12, 20);
-    [news addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
-        [sidebarViewController openOptionAtIndex:3];
-    }] forControlEvents:UIControlEventPrimaryActionTriggered];
-    [news.heightAnchor constraintEqualToConstant:82].active = YES;
-    [self.contentStack addArrangedSubview:news];
+    UIView *panel = [UIView new];
+    panel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self styleFlatPanel:panel radius:16];
+
+    UIImageView *icon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"megaphone.fill"]];
+    icon.translatesAutoresizingMaskIntoConstraints = NO;
+    icon.tintColor = [self nexaColorRed:174 green:105 blue:255];
+    UILabel *title = [self labelWithText:@"News & Updates" size:18 weight:UIFontWeightBold color:UIColor.whiteColor];
+    title.translatesAutoresizingMaskIntoConstraints = NO;
+    UILabel *detail = [self labelWithText:@"Your latest NEXA launcher updates" size:13 weight:UIFontWeightMedium color:[self nexaColorRed:169 green:159 blue:194]];
+    detail.translatesAutoresizingMaskIntoConstraints = NO;
+    UIButton *open = [UIButton buttonWithType:UIButtonTypeSystem];
+    open.translatesAutoresizingMaskIntoConstraints = NO;
+    [open setTitle:@"View all  →" forState:UIControlStateNormal];
+    [open setTitleColor:[self nexaColorRed:190 green:135 blue:255] forState:UIControlStateNormal];
+    open.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    [open addTarget:self action:@selector(openNews) forControlEvents:UIControlEventTouchUpInside];
+
+    [panel addSubview:icon];
+    [panel addSubview:title];
+    [panel addSubview:detail];
+    [panel addSubview:open];
+    [NSLayoutConstraint activateConstraints:@[
+        [icon.leadingAnchor constraintEqualToAnchor:panel.leadingAnchor constant:18],
+        [icon.topAnchor constraintEqualToAnchor:panel.topAnchor constant:18],
+        [icon.widthAnchor constraintEqualToConstant:23],
+        [icon.heightAnchor constraintEqualToConstant:23],
+        [title.leadingAnchor constraintEqualToAnchor:icon.trailingAnchor constant:12],
+        [title.centerYAnchor constraintEqualToAnchor:icon.centerYAnchor],
+        [open.trailingAnchor constraintEqualToAnchor:panel.trailingAnchor constant:-16],
+        [open.centerYAnchor constraintEqualToAnchor:title.centerYAnchor],
+        [detail.leadingAnchor constraintEqualToAnchor:title.leadingAnchor],
+        [detail.topAnchor constraintEqualToAnchor:title.bottomAnchor constant:7],
+        [detail.trailingAnchor constraintEqualToAnchor:panel.trailingAnchor constant:-18],
+        [detail.bottomAnchor constraintEqualToAnchor:panel.bottomAnchor constant:-18],
+        [panel.heightAnchor constraintEqualToConstant:92]
+    ]];
+    [open setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    [self.contentStack addArrangedSubview:panel];
+}
+
+- (void)openNews {
+    [sidebarViewController openOptionAtIndex:3];
 }
 
 - (void)refreshProfileInformation {
     NSString *profileName = PLProfiles.current.selectedProfileName ?: @"Default";
     NSDictionary *profile = PLProfiles.current.profiles[profileName];
     NSString *version = profile[@"lastVersionId"] ?: @"Choose a version";
-    NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"] ?: @"Default";
-    self.profileLabel.text = [NSString stringWithFormat:@"PROFILE  %@", profileName];
     NSString *javaVersion = [PLProfiles resolveKeyForCurrentProfile:@"javaVersion"] ?: @"0";
     NSString *runtime = [javaVersion isEqualToString:@"0"] ? @"Auto" : [NSString stringWithFormat:@"Java %@", javaVersion];
+    NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"] ?: @"Default";
     NSString *ram = getPrefBool(@"java.auto_ram") ? @"Auto" : [NSString stringWithFormat:@"%ld MB", (long)getPrefInt(@"java.allocated_memory")];
-    self.versionValueLabel.text = version;
+    self.versionButton.accessibilityLabel = [NSString stringWithFormat:@"Selected Minecraft version: %@", version];
+    [self.versionButton setTitle:[NSString stringWithFormat:@"  %@", version] forState:UIControlStateNormal];
     self.runtimeValueLabel.text = runtime;
     self.rendererValueLabel.text = renderer;
     self.ramValueLabel.text = ram;
