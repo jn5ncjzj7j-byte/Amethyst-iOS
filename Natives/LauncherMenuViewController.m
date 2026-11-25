@@ -476,11 +476,24 @@
     
     UIView *brandView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 126, 34)];
     UIView *brandOrb = [[UIView alloc] initWithFrame:CGRectMake(0, 5, 24, 24)];
-    brandOrb.backgroundColor = [UIColor colorWithRed:145.0/255.0 green:91.0/255.0 blue:230.0/255.0 alpha:1.0];
+    brandOrb.backgroundColor = [UIColor colorWithRed:9.0/255.0 green:10.0/255.0 blue:28.0/255.0 alpha:1.0];
     brandOrb.layer.cornerRadius = 12;
-    brandOrb.layer.shadowColor = brandOrb.backgroundColor.CGColor;
-    brandOrb.layer.shadowOpacity = 0.65;
-    brandOrb.layer.shadowRadius = 10;
+    brandOrb.layer.borderWidth = 1.5;
+    brandOrb.layer.borderColor = [UIColor colorWithRed:171.0/255.0 green:126.0/255.0 blue:255.0/255.0 alpha:1.0].CGColor;
+    brandOrb.layer.shadowColor = [UIColor colorWithRed:129.0/255.0 green:89.0/255.0 blue:255.0/255.0 alpha:1.0].CGColor;
+    brandOrb.layer.shadowOpacity = 0.95;
+    brandOrb.layer.shadowRadius = 13;
+    CAGradientLayer *brandOrbGlow = [CAGradientLayer layer];
+    brandOrbGlow.frame = brandOrb.bounds;
+    brandOrbGlow.cornerRadius = 12;
+    brandOrbGlow.colors = @[
+        (id)[UIColor colorWithRed:116.0/255.0 green:139.0/255.0 blue:255.0/255.0 alpha:1.0].CGColor,
+        (id)[UIColor colorWithRed:36.0/255.0 green:26.0/255.0 blue:87.0/255.0 alpha:1.0].CGColor,
+        (id)[UIColor colorWithRed:5.0/255.0 green:6.0/255.0 blue:19.0/255.0 alpha:1.0].CGColor
+    ];
+    brandOrbGlow.startPoint = CGPointMake(0.3, 0);
+    brandOrbGlow.endPoint = CGPointMake(0.7, 1);
+    [brandOrb.layer addSublayer:brandOrbGlow];
     UILabel *brandTitle = [[UILabel alloc] initWithFrame:CGRectMake(34, 0, 90, 34)];
     brandTitle.text = @"NEXA";
     brandTitle.textColor = UIColor.whiteColor;
@@ -566,16 +579,17 @@
     [self.nexaFooterView addSubview:self.clockLabel];
     [self.nexaFooterView addSubview:self.dateLabel];
 
-    NSArray *shortcutTitles = @[@"GitHub", @"Discord", @"Changelog"];
-    NSArray *shortcutSymbols = @[@"chevron.left.forwardslash.chevron.right", @"bubble.left.and.bubble.right", @"clock.arrow.circlepath"];
-    for (NSUInteger i = 0; i < shortcutTitles.count; i++) {
+    NSArray *shortcutSymbols = @[@"chevron.left.forwardslash.chevron.right", @"bubble.left.and.bubble.right.fill", @"doc.text"];
+    for (NSUInteger i = 0; i < shortcutSymbols.count; i++) {
         UIButton *shortcut = [UIButton buttonWithType:UIButtonTypeSystem];
-        [shortcut setTitle:shortcutTitles[i] forState:UIControlStateNormal];
         [shortcut setImage:[UIImage systemImageNamed:shortcutSymbols[i]] forState:UIControlStateNormal];
-        [shortcut setTitleColor:[UIColor colorWithRed:190.0/255.0 green:164.0/255.0 blue:245.0/255.0 alpha:1.0] forState:UIControlStateNormal];
-        shortcut.tintColor = [UIColor colorWithRed:190.0/255.0 green:164.0/255.0 blue:245.0/255.0 alpha:1.0];
-        shortcut.titleLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
+        shortcut.backgroundColor = [UIColor colorWithRed:18.0/255.0 green:17.0/255.0 blue:34.0/255.0 alpha:1.0];
+        shortcut.layer.cornerRadius = 13;
+        shortcut.layer.borderWidth = 1;
+        shortcut.layer.borderColor = [UIColor colorWithRed:53.0/255.0 green:43.0/255.0 blue:83.0/255.0 alpha:1.0].CGColor;
+        shortcut.tintColor = [UIColor colorWithRed:202.0/255.0 green:174.0/255.0 blue:255.0/255.0 alpha:1.0];
         shortcut.tag = i;
+        shortcut.accessibilityLabel = @[@"GitHub", @"Discord", @"Changelog"][i];
         [shortcut addTarget:self action:@selector(nexaShortcutTapped:) forControlEvents:UIControlEventPrimaryActionTriggered];
         [self.nexaFooterView addSubview:shortcut];
     }
@@ -638,9 +652,18 @@
         self.accountButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [self.accountButton addTarget:self action:@selector(selectAccount:) forControlEvents:UIControlEventPrimaryActionTriggered];
         self.accountButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-
-        self.accountButton.titleEdgeInsets = UIEdgeInsetsMake(0, 4, 0, -4);
+        self.accountButton.backgroundColor = [UIColor colorWithRed:17.0/255.0 green:16.0/255.0 blue:34.0/255.0 alpha:1.0];
+        self.accountButton.layer.cornerRadius = 15;
+        self.accountButton.layer.borderWidth = 1;
+        self.accountButton.layer.borderColor = [UIColor colorWithRed:78.0/255.0 green:62.0/255.0 blue:120.0/255.0 alpha:1.0].CGColor;
+        self.accountButton.clipsToBounds = YES;
+        self.accountButton.titleEdgeInsets = UIEdgeInsetsMake(0, 8, 0, -4);
+        self.accountButton.imageEdgeInsets = UIEdgeInsetsMake(7, 8, 7, 4);
         self.accountButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        self.accountButton.imageView.layer.cornerRadius = 18;
+        self.accountButton.imageView.clipsToBounds = YES;
+        self.accountButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        self.accountButton.titleLabel.textColor = UIColor.whiteColor;
         self.accountButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         self.accountBtnItem = [[UIBarButtonItem alloc] initWithCustomView:self.accountButton];
     }
@@ -676,11 +699,14 @@
     self.nexaFooterView.frame = CGRectMake(0, footerBottom - footerHeight, self.navigationController.view.bounds.size.width, footerHeight);
     self.clockLabel.frame = CGRectMake(22, 12, self.nexaFooterView.bounds.size.width - 44, 30);
     self.dateLabel.frame = CGRectMake(22, 43, self.nexaFooterView.bounds.size.width - 44, 20);
-    CGFloat buttonWidth = (self.nexaFooterView.bounds.size.width - 32) / 3.0;
+    CGFloat buttonWidth = 58;
+    CGFloat buttonGap = 12;
+    CGFloat totalWidth = buttonWidth * 3 + buttonGap * 2;
+    CGFloat startX = (self.nexaFooterView.bounds.size.width - totalWidth) / 2.0;
     for (UIView *view in self.nexaFooterView.subviews) {
         if (![view isKindOfClass:UIButton.class]) continue;
         UIButton *button = (UIButton *)view;
-        button.frame = CGRectMake(12 + button.tag * buttonWidth, 82, buttonWidth, 54);
+        button.frame = CGRectMake(startX + button.tag * (buttonWidth + buttonGap), 82, buttonWidth, 52);
     }
 }
 
