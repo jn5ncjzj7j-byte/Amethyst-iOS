@@ -200,9 +200,9 @@
     ]];
     [hero bringSubviewToFront:horizon];
 
-    UILabel *edition = [self labelWithText:@"NEXA  /  MINECRAFT JAVA EDITION" size:12 weight:UIFontWeightBold color:[self nexaColorRed:196 green:171 blue:255]];
-    UILabel *title = [self labelWithText:@"Your next world starts here." size:27 weight:UIFontWeightBold color:UIColor.whiteColor];
-    UILabel *subtitle = [self labelWithText:@"A launcher built around your Minecraft experience." size:14 weight:UIFontWeightMedium color:[self nexaColorRed:197 green:190 blue:222]];
+    UILabel *edition = [self labelWithText:@"NEXA  /  JAVA EDITION" size:12 weight:UIFontWeightBold color:[self nexaColorRed:196 green:171 blue:255]];
+    UILabel *title = [self labelWithText:@"MINECRAFT" size:31 weight:UIFontWeightHeavy color:UIColor.whiteColor];
+    UILabel *subtitle = [self labelWithText:@"Your next world starts here." size:14 weight:UIFontWeightMedium color:[self nexaColorRed:197 green:190 blue:222]];
     edition.translatesAutoresizingMaskIntoConstraints = NO;
     title.translatesAutoresizingMaskIntoConstraints = NO;
     subtitle.translatesAutoresizingMaskIntoConstraints = NO;
@@ -251,6 +251,16 @@
     self.versionButton.tintColor = [self nexaColorRed:175 green:119 blue:255];
     self.versionButton.imageEdgeInsets = UIEdgeInsetsMake(0, 14, 0, 10);
     self.versionButton.titleEdgeInsets = UIEdgeInsetsMake(0, 20, 0, 0);
+    UIImageView *versionChevron = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"chevron.down"]];
+    versionChevron.translatesAutoresizingMaskIntoConstraints = NO;
+    versionChevron.tintColor = [self nexaColorRed:188 green:151 blue:255];
+    [self.versionButton addSubview:versionChevron];
+    [NSLayoutConstraint activateConstraints:@[
+        [versionChevron.trailingAnchor constraintEqualToAnchor:self.versionButton.trailingAnchor constant:-16],
+        [versionChevron.centerYAnchor constraintEqualToAnchor:self.versionButton.centerYAnchor],
+        [versionChevron.widthAnchor constraintEqualToConstant:12],
+        [versionChevron.heightAnchor constraintEqualToConstant:9]
+    ]];
     [self.versionButton addTarget:self action:@selector(selectVersion) forControlEvents:UIControlEventTouchUpInside];
 
     UIButton *play = [UIButton buttonWithType:UIButtonTypeCustom];
