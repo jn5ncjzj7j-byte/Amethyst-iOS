@@ -1,5 +1,17 @@
 # Angel Aura Amethyst (iOS)
 
+## 1.2 (Development)
+
+### NEXA Visual Redesign
+- Rebuilt the Home dashboard around a dark cosmic theme with a glowing ring-free planet, starfield, and purple horizon.
+- Replaced translucent Liquid Glass styling in the launcher navigation and version toolbar with opaque, flat surfaces.
+- Moved Minecraft installation selection into its own control beside Play.
+- Removed the dropdown arrow from Play so version selection and launching are separate actions.
+- Reworked Java, renderer, and memory status cards.
+- Rebuilt Mods, Resource Packs, Shaders, and News & Updates cards with consistent spacing.
+- Refined the sidebar orb, account control, and icon-only footer shortcuts.
+- Return to the Home layout after confirming a version selection.
+
 ## 1.1 (Development)
 
 ### NEXA Launcher Interface
