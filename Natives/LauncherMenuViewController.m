@@ -64,7 +64,6 @@
     
     self.options = @[
         [LauncherMenuCustomItem vcClass:LauncherNewsViewController.class],
-        [LauncherMenuCustomItem vcClass:LauncherChangelogViewController.class],
         [LauncherMenuCustomItem vcClass:LauncherProfilesViewController.class],
         [LauncherMenuCustomItem vcClass:LauncherPreferencesViewController.class],
         [LauncherMenuCustomItem vcClass:ModrinthModsViewController.class],
