@@ -49,21 +49,19 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         [self setNeedsUpdateOfScreenEdgesDeferringSystemGestures];
     }
     UIToolbar *targetToolbar = self.toolbar;
-    BOOL hasLiquidGlass = _UISolariumEnabled && _UISolariumEnabled();
-    
-    if(hasLiquidGlass) {
-        self.versionTextField = [[PickTextField alloc] initWithFrame:CGRectMake(0, 0, MIN(self.view.frame.size.width,self.view.frame.size.height)*0.8 - 40, 36)];
-        self.progressViewMain = [[UIProgressView alloc] initWithFrame:CGRectMake(20, -5, self.versionTextField.frame.size.width-40, 0)];
-    } else {
-        self.versionTextField = [[PickTextField alloc] initWithFrame:CGRectMake(4, 4, self.toolbar.frame.size.width * 0.8 - 8, self.toolbar.frame.size.height - 8)];
-        self.progressViewMain = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 0, targetToolbar.frame.size.width, 0)];
-    }
+    self.versionTextField = [[PickTextField alloc] initWithFrame:CGRectMake(8, 5, MAX(220, targetToolbar.frame.size.width * 0.72 - 12), targetToolbar.frame.size.height - 10)];
+    self.progressViewMain = [[UIProgressView alloc] initWithFrame:CGRectMake(0, 0, targetToolbar.frame.size.width, 0)];
     [self.versionTextField addTarget:self.versionTextField action:@selector(resignFirstResponder) forControlEvents:UIControlEventEditingDidEndOnExit];
     self.versionTextField.autoresizingMask = AUTORESIZE_MASKS;
-    self.versionTextField.placeholder = @"Specify version...";
+    self.versionTextField.placeholder = @"Select Minecraft version";
+    self.versionTextField.backgroundColor = [UIColor colorWithRed:18.0/255.0 green:16.0/255.0 blue:35.0/255.0 alpha:1.0];
+    self.versionTextField.textColor = UIColor.whiteColor;
+    self.versionTextField.layer.cornerRadius = 9;
+    self.versionTextField.layer.borderWidth = 1;
+    self.versionTextField.layer.borderColor = [UIColor colorWithRed:83.0/255.0 green:65.0/255.0 blue:132.0/255.0 alpha:1.0].CGColor;
     self.versionTextField.leftView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
-    self.versionTextField.rightView = [[UIImageView alloc] initWithImage:[[UIImage imageNamed:@"SpinnerArrow"] _imageWithSize:CGSizeMake(30, 30)]];
-    self.versionTextField.rightView.frame = CGRectMake(0, 0, self.versionTextField.frame.size.height * 0.9, self.versionTextField.frame.size.height * 0.9);
+    self.versionTextField.rightView = [[UIImageView alloc] initWithImage:[[UIImage imageNamed:@"SpinnerArrow"] _imageWithSize:CGSizeMake(24, 24)]];
+    self.versionTextField.rightView.frame = CGRectMake(0, 0, 32, 32);
     self.versionTextField.leftViewMode = UITextFieldViewModeAlways;
     self.versionTextField.rightViewMode = UITextFieldViewModeAlways;
     self.versionTextField.textAlignment = NSTextAlignmentCenter;
@@ -71,60 +69,37 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     self.versionPickerView = [[PLPickerView alloc] init];
     self.versionPickerView.delegate = self;
     self.versionPickerView.dataSource = self;
-
     [self reloadProfileList];
-
     self.versionTextField.inputView = self.versionPickerView;
     [self.versionTextField setupDoneButtonWithTarget:self action:@selector(versionClosePicker)];
 
-    UIView *textFieldContainer = nil;
-    if(hasLiquidGlass) {
-        textFieldContainer = [[UIView alloc] initWithFrame:self.versionTextField.frame];
-        [textFieldContainer addSubview:self.progressViewMain];
-        self.buttonInstallItem = [[UIBarButtonItem alloc] initWithTitle:localize(@"Play", nil)
-                                                                  style:UIBarButtonItemStylePlain
-                                                                 target:self
-                                                                 action:@selector(performInstallOrShowDetails:)];
-        self.buttonInstallItem.enabled = NO;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.buttonInstallItem.buttonGlassView.backgroundColor = [UIColor colorWithRed:121/255.0 green:56/255.0 blue:162/255.0 alpha:0.5];
-        });
-        [textFieldContainer addSubview:self.versionTextField];
-        UIBarButtonItem *textFieldItem = [[UIBarButtonItem alloc] initWithCustomView:textFieldContainer];
-        self.globalToolbarItems = @[
-            textFieldItem,
-            self.buttonInstallItem,
-        ];
-    } else {
-        self.buttonInstall = [UIButton buttonWithType:UIButtonTypeSystem];
-        setButtonPointerInteraction(self.buttonInstall);
-        [self.buttonInstall setTitle:localize(@"Play", nil) forState:UIControlStateNormal];
-        self.buttonInstall.autoresizingMask = AUTORESIZE_MASKS;
-        self.buttonInstall.backgroundColor = [UIColor colorWithRed:121/255.0 green:56/255.0 blue:162/255.0 alpha:1.0];
-        self.buttonInstall.layer.cornerRadius = 5;
-        self.buttonInstall.frame = CGRectMake(self.toolbar.frame.size.width * 0.8, 4, self.toolbar.frame.size.width * 0.2, self.toolbar.frame.size.height - 8);
-        self.buttonInstall.tintColor = UIColor.whiteColor;
-        self.buttonInstall.enabled = NO;
-        [self.buttonInstall addTarget:self action:@selector(performInstallOrShowDetails:) forControlEvents:UIControlEventPrimaryActionTriggered];
-        [targetToolbar addSubview:self.progressViewMain];
-        [targetToolbar addSubview:self.versionTextField];
-        [targetToolbar addSubview:self.buttonInstall];
-    }
-    
+    self.buttonInstall = [UIButton buttonWithType:UIButtonTypeSystem];
+    setButtonPointerInteraction(self.buttonInstall);
+    [self.buttonInstall setTitle:localize(@"Play", nil) forState:UIControlStateNormal];
+    self.buttonInstall.autoresizingMask = AUTORESIZE_MASKS;
+    self.buttonInstall.backgroundColor = [UIColor colorWithRed:117.0/255.0 green:49.0/255.0 blue:232.0/255.0 alpha:1.0];
+    self.buttonInstall.layer.cornerRadius = 9;
+    self.buttonInstall.layer.borderWidth = 1;
+    self.buttonInstall.layer.borderColor = [UIColor colorWithRed:174.0/255.0 green:117.0/255.0 blue:255.0/255.0 alpha:1.0].CGColor;
+    self.buttonInstall.frame = CGRectMake(targetToolbar.frame.size.width * 0.76, 5, targetToolbar.frame.size.width * 0.23, targetToolbar.frame.size.height - 10);
+    self.buttonInstall.tintColor = UIColor.whiteColor;
+    self.buttonInstall.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
+    self.buttonInstall.enabled = NO;
+    [self.buttonInstall addTarget:self action:@selector(performInstallOrShowDetails:) forControlEvents:UIControlEventPrimaryActionTriggered];
+    [targetToolbar addSubview:self.progressViewMain];
+    [targetToolbar addSubview:self.versionTextField];
+    [targetToolbar addSubview:self.buttonInstall];
+
     self.progressViewMain.autoresizingMask = AUTORESIZE_MASKS;
     self.progressViewMain.hidden = YES;
     self.progressText = [[UILabel alloc] initWithFrame:self.versionTextField.frame];
     self.progressText.adjustsFontSizeToFitWidth = YES;
     self.progressText.autoresizingMask = AUTORESIZE_MASKS;
-    self.progressText.font = [self.progressText.font fontWithSize:16];
+    self.progressText.font = [self.progressText.font fontWithSize:14];
     self.progressText.textAlignment = NSTextAlignmentCenter;
+    self.progressText.textColor = UIColor.whiteColor;
     self.progressText.userInteractionEnabled = NO;
-    
-    if(hasLiquidGlass) {
-        [textFieldContainer addSubview:self.progressText];
-    } else {
-        [targetToolbar addSubview:self.progressText];
-    }
+    [targetToolbar addSubview:self.progressText];
 
     [self fetchRemoteVersionList];
     [NSNotificationCenter.defaultCenter addObserver:self
@@ -360,7 +335,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         [self presentViewController:self.progressVC animated:YES completion:nil];
     } else {
         if (usesBarButtonItem) {
-            sender = ((UIBarButtonItem *)sender).buttonGlassView;
+            sender = self.view;
         }
         [self launchMinecraft:sender];
     }
