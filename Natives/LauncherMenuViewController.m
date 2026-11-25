@@ -45,7 +45,10 @@
 
 @interface LauncherHomeViewController ()
 @property(nonatomic) UILabel *profileLabel;
-@property(nonatomic) UILabel *versionLabel;
+@property(nonatomic) UILabel *versionValueLabel;
+@property(nonatomic) UILabel *runtimeValueLabel;
+@property(nonatomic) UILabel *rendererValueLabel;
+@property(nonatomic) UILabel *ramValueLabel;
 @property(nonatomic) UIStackView *contentStack;
 @end
 
@@ -157,9 +160,50 @@
     self.profileLabel.textColor = [UIColor colorWithWhite:0.88 alpha:1.0];
     self.profileLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
 
-    self.versionLabel = [UILabel new];
-    self.versionLabel.textColor = [UIColor colorWithWhite:0.68 alpha:1.0];
-    self.versionLabel.font = [UIFont systemFontOfSize:13];
+    self.profileLabel.text = @"Profile";
+
+    UIStackView *metadataRow = [[UIStackView alloc] init];
+    metadataRow.axis = UILayoutConstraintAxisHorizontal;
+    metadataRow.spacing = 8;
+    metadataRow.distribution = UIStackViewDistributionFillEqually;
+
+    NSArray *metadataTitles = @[@"VERSION", @"JAVA", @"RENDERER", @"RAM"];
+    NSMutableArray<UILabel *> *metadataValues = [NSMutableArray array];
+    for (NSString *metadataTitle in metadataTitles) {
+        UIView *metadataCard = [UIView new];
+        metadataCard.backgroundColor = [UIColor colorWithRed:37.0/255.0 green:32.0/255.0 blue:59.0/255.0 alpha:1.0];
+        metadataCard.layer.cornerRadius = 11;
+        UILabel *titleLabel = [UILabel new];
+        titleLabel.text = metadataTitle;
+        titleLabel.textColor = [UIColor colorWithWhite:0.62 alpha:1.0];
+        titleLabel.font = [UIFont systemFontOfSize:9 weight:UIFontWeightBold];
+        UILabel *valueLabel = [UILabel new];
+        valueLabel.textColor = UIColor.whiteColor;
+        valueLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+        valueLabel.adjustsFontSizeToFitWidth = YES;
+        valueLabel.minimumScaleFactor = 0.75;
+        valueLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        [metadataCard addSubview:titleLabel];
+        [metadataCard addSubview:valueLabel];
+        titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        valueLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+            [titleLabel.leadingAnchor constraintEqualToAnchor:metadataCard.leadingAnchor constant:10],
+            [titleLabel.trailingAnchor constraintEqualToAnchor:metadataCard.trailingAnchor constant:-6],
+            [titleLabel.topAnchor constraintEqualToAnchor:metadataCard.topAnchor constant:8],
+            [valueLabel.leadingAnchor constraintEqualToAnchor:metadataCard.leadingAnchor constant:10],
+            [valueLabel.trailingAnchor constraintEqualToAnchor:metadataCard.trailingAnchor constant:-6],
+            [valueLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:4],
+            [valueLabel.bottomAnchor constraintLessThanOrEqualToAnchor:metadataCard.bottomAnchor constant:-7],
+            [metadataCard.heightAnchor constraintEqualToConstant:56]
+        ]];
+        [metadataValues addObject:valueLabel];
+        [metadataRow addArrangedSubview:metadataCard];
+    }
+    self.versionValueLabel = metadataValues[0];
+    self.runtimeValueLabel = metadataValues[1];
+    self.rendererValueLabel = metadataValues[2];
+    self.ramValueLabel = metadataValues[3];
 
     UIButton *versionButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [versionButton setTitle:@"Change version" forState:UIControlStateNormal];
@@ -185,7 +229,7 @@
     brandRow.alignment = UIStackViewAlignmentCenter;
     brandRow.spacing = 12;
 
-    UIStackView *details = [[UIStackView alloc] initWithArrangedSubviews:@[eyebrow, heading, self.profileLabel, self.versionLabel, versionButton, play]];
+    UIStackView *details = [[UIStackView alloc] initWithArrangedSubviews:@[eyebrow, heading, self.profileLabel, metadataRow, versionButton, play]];
     details.axis = UILayoutConstraintAxisVertical;
     details.spacing = 11;
 
@@ -261,11 +305,14 @@
     NSDictionary *profile = PLProfiles.current.profiles[profileName];
     NSString *version = profile[@"lastVersionId"] ?: @"Choose a version";
     NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"] ?: @"Default";
-    self.profileLabel.text = [NSString stringWithFormat:@"Profile  %@     Renderer  %@", profileName, renderer];
+    self.profileLabel.text = [NSString stringWithFormat:@"PROFILE  %@", profileName];
     NSString *javaVersion = [PLProfiles resolveKeyForCurrentProfile:@"javaVersion"] ?: @"0";
     NSString *runtime = [javaVersion isEqualToString:@"0"] ? @"Auto" : [NSString stringWithFormat:@"Java %@", javaVersion];
     NSString *ram = getPrefBool(@"java.auto_ram") ? @"Auto" : [NSString stringWithFormat:@"%ld MB", (long)getPrefInt(@"java.allocated_memory")];
-    self.versionLabel.text = [NSString stringWithFormat:@"Version  %@     Java  %@     RAM  %@", version, runtime, ram];
+    self.versionValueLabel.text = version;
+    self.runtimeValueLabel.text = runtime;
+    self.rendererValueLabel.text = renderer;
+    self.ramValueLabel.text = ram;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
