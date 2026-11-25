@@ -37,8 +37,32 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:13.0/255.0 green:16.0/255.0 blue:25.0/255.0 alpha:1.0];
+    self.view.backgroundColor = [UIColor colorWithRed:5.0/255.0 green:6.0/255.0 blue:16.0/255.0 alpha:1.0];
     self.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
+
+    UINavigationBarAppearance *navigationAppearance = [UINavigationBarAppearance new];
+    navigationAppearance.backgroundEffect = nil;
+    navigationAppearance.backgroundColor = [UIColor colorWithRed:7.0/255.0 green:8.0/255.0 blue:19.0/255.0 alpha:1.0];
+    navigationAppearance.shadowColor = [UIColor colorWithRed:48.0/255.0 green:37.0/255.0 blue:79.0/255.0 alpha:1.0];
+    navigationAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.whiteColor};
+    navigationAppearance.largeTitleTextAttributes = @{NSForegroundColorAttributeName: UIColor.whiteColor};
+    UINavigationBar *navigationBar = UINavigationBar.appearance;
+    navigationBar.standardAppearance = navigationAppearance;
+    navigationBar.scrollEdgeAppearance = navigationAppearance;
+    navigationBar.compactAppearance = navigationAppearance;
+    navigationBar.translucent = NO;
+    navigationBar.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
+
+    UIToolbarAppearance *toolbarAppearance = [UIToolbarAppearance new];
+    toolbarAppearance.backgroundEffect = nil;
+    toolbarAppearance.backgroundColor = [UIColor colorWithRed:7.0/255.0 green:8.0/255.0 blue:19.0/255.0 alpha:1.0];
+    toolbarAppearance.shadowColor = [UIColor colorWithRed:48.0/255.0 green:37.0/255.0 blue:79.0/255.0 alpha:1.0];
+    UIToolbar *toolbar = UIToolbar.appearance;
+    toolbar.standardAppearance = toolbarAppearance;
+    toolbar.compactAppearance = toolbarAppearance;
+    toolbar.scrollEdgeAppearance = toolbarAppearance;
+    toolbar.translucent = NO;
+    toolbar.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
     if ([getPrefObject(@"control.control_safe_area") length] == 0) {
         setPrefObject(@"control.control_safe_area", NSStringFromUIEdgeInsets(getDefaultSafeArea()));
     }
