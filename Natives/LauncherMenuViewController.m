@@ -539,7 +539,21 @@
     if (index < 3) self.lastSelectedIndex = (int)index;
     contentNavigationController.toolbarHidden = index != 1;
     selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
-    selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem];
+    if ([selected.vcArray[0] respondsToSelector:@selector(importLocalFile)]) {
+        UIImage *sourceImage = [UIImage imageNamed:@"ImportContent"];
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24)];
+        UIImage *smallImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+            CGFloat scale = MIN(24 / sourceImage.size.width, 24 / sourceImage.size.height);
+            CGSize size = CGSizeMake(sourceImage.size.width * scale, sourceImage.size.height * scale);
+            [sourceImage drawInRect:CGRectMake((24 - size.width) / 2, (24 - size.height) / 2, size.width, size.height)];
+        }];
+        UIBarButtonItem *importItem = [[UIBarButtonItem alloc] initWithImage:[smallImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] style:UIBarButtonItemStylePlain target:selected.vcArray[0] action:@selector(importLocalFile)];
+        importItem.tintColor = UIColor.labelColor;
+        importItem.accessibilityLabel = localize(@"preference.title.import_content", nil);
+        selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem, importItem];
+    } else {
+        selected.vcArray[0].navigationItem.leftBarButtonItems = @[self.splitViewController.displayModeButtonItem];
+    }
     selected.vcArray[0].navigationItem.leftItemsSupplementBackButton = YES;
 }
 
