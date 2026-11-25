@@ -182,6 +182,7 @@
         (id)[UIColor colorWithRed:0.62 green:0.34 blue:1.0 alpha:0.72].CGColor,
         (id)[UIColor colorWithRed:0.86 green:0.55 blue:1.0 alpha:0.0].CGColor
     ];
+    horizonGlow.frame = CGRectMake(0, 0, 1200, 34);
     horizonGlow.startPoint = CGPointMake(0, 0.5);
     horizonGlow.endPoint = CGPointMake(1, 0.5);
     [horizon.layer addSublayer:horizonGlow];
