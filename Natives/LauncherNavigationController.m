@@ -326,7 +326,9 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 
 - (void)showVersionPicker {
     self.toolbarHidden = NO;
-    [self.versionTextField becomeFirstResponder];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.versionTextField becomeFirstResponder];
+    });
 }
 
 - (void)launchSelectedVersionFromHome:(UIButton *)sender {
