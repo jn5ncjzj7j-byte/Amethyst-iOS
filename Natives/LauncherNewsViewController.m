@@ -8,33 +8,6 @@
 @interface LauncherNewsViewController () <WKNavigationDelegate>
 @property(nonatomic) WKWebView *newsWebView;
 
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-
-    UIViewController *primaryController = self.splitViewController.viewControllers.firstObject;
-    UIView *primaryView = primaryController.view;
-    CGFloat sidebarInset = 0;
-
-    if (primaryView && primaryView.window == self.newsWebView.window) {
-        CGRect primaryRect = [self.newsWebView convertRect:primaryView.bounds fromView:primaryView];
-        CGRect overlap = CGRectIntersection(self.newsWebView.bounds, primaryRect);
-        if (!CGRectIsNull(overlap) && CGRectGetMinX(overlap) <= CGRectGetMinX(self.newsWebView.bounds)) {
-            sidebarInset = CGRectGetMaxX(overlap) - CGRectGetMinX(self.newsWebView.bounds);
-        }
-    }
-
-    UIScrollView *scrollView = self.newsWebView.scrollView;
-    if (fabs(scrollView.contentInset.left - sidebarInset) > 0.5) {
-        UIEdgeInsets insets = scrollView.contentInset;
-        insets.left = sidebarInset;
-        scrollView.contentInset = insets;
-
-        UIEdgeInsets indicatorInsets = scrollView.scrollIndicatorInsets;
-        indicatorInsets.left = sidebarInset;
-        scrollView.scrollIndicatorInsets = indicatorInsets;
-    }
-}
-
 @end
 
 static NSString *AMEscapeChangelogHTML(NSString *value) {
@@ -145,6 +118,34 @@ static NSString *AMEChangelogHTML(NSString *markdown) {
         return;
     }
     decisionHandler(WKNavigationActionPolicyAllow);
+}
+
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+
+    UIViewController *primaryController = self.splitViewController.viewControllers.firstObject;
+    UIView *primaryView = primaryController.view;
+    CGFloat sidebarInset = 0;
+
+    if (primaryView && primaryView.window == self.newsWebView.window) {
+        CGRect primaryRect = [self.newsWebView convertRect:primaryView.bounds fromView:primaryView];
+        CGRect overlap = CGRectIntersection(self.newsWebView.bounds, primaryRect);
+        if (!CGRectIsNull(overlap) && CGRectGetMinX(overlap) <= CGRectGetMinX(self.newsWebView.bounds)) {
+            sidebarInset = CGRectGetMaxX(overlap) - CGRectGetMinX(self.newsWebView.bounds);
+        }
+    }
+
+    UIScrollView *scrollView = self.newsWebView.scrollView;
+    if (fabs(scrollView.contentInset.left - sidebarInset) > 0.5) {
+        UIEdgeInsets insets = scrollView.contentInset;
+        insets.left = sidebarInset;
+        scrollView.contentInset = insets;
+
+        UIEdgeInsets indicatorInsets = scrollView.scrollIndicatorInsets;
+        indicatorInsets.left = sidebarInset;
+        scrollView.scrollIndicatorInsets = indicatorInsets;
+    }
 }
 
 @end
