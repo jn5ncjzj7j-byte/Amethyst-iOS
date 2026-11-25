@@ -79,15 +79,6 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     return [UIPointerStyle hiddenPointerStyle];
 }
 
-- (void)splitViewController:(UISplitViewController *)svc willChangeToDisplayMode:(UISplitViewControllerDisplayMode)displayMode {
-    if (self.preferredDisplayMode != displayMode && self.displayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
-        });
-    }
-}
-
-
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     [self.view bringSubviewToFront:self.launcherMousePointerView];
@@ -171,14 +162,13 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 
 - (void)changeDisplayModeForSize:(CGSize)size {
     BOOL isPortrait = size.height > size.width;
-    if (self.preferredDisplayMode == 0 || self.displayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
-        if(!getPrefBool(@"general.hidden_sidebar")) {
-            self.preferredDisplayMode = isPortrait ?
-                UISplitViewControllerDisplayModeOneOverSecondary :
-                UISplitViewControllerDisplayModeOneBesideSecondary;
-        } else {
-            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
-        }
+    BOOL hideSidebar = getPrefBool(@"general.hidden_sidebar");
+    if (hideSidebar) {
+        self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
+    } else {
+        self.preferredDisplayMode = isPortrait ?
+            UISplitViewControllerDisplayModeOneOverSecondary :
+            UISplitViewControllerDisplayModeOneBesideSecondary;
     }
     self.preferredSplitBehavior = isPortrait ?
         UISplitViewControllerSplitBehaviorOverlay :
