@@ -280,6 +280,7 @@
 @property(nonatomic) NSMutableArray<LauncherMenuCustomItem*> *options;
 @property(nonatomic) UILabel *statusLabel;
 @property(nonatomic) int lastSelectedIndex;
+@property(nonatomic) NSUInteger activeOptionIndex;
 @property(nonatomic) UIView *nexaFooterView;
 @property(nonatomic) UILabel *clockLabel;
 @property(nonatomic) UILabel *dateLabel;
@@ -532,8 +533,9 @@
         selected.action();
         return;
     }
-    self.options[self.lastSelectedIndex].vcArray = contentNavigationController.viewControllers;
+    self.options[self.activeOptionIndex].vcArray = contentNavigationController.viewControllers;
     [contentNavigationController setViewControllers:selected.vcArray animated:NO];
+    self.activeOptionIndex = index;
     if (index < 3) self.lastSelectedIndex = (int)index;
     contentNavigationController.toolbarHidden = index != 1;
     selected.vcArray[0].navigationItem.rightBarButtonItem = self.accountBtnItem;
