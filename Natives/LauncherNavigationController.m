@@ -324,6 +324,14 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     });
 }
 
+- (void)showVersionPicker {
+    [self.versionTextField becomeFirstResponder];
+}
+
+- (void)launchSelectedVersionFromHome:(UIButton *)sender {
+    [self performInstallOrShowDetails:sender];
+}
+
 - (void)performInstallOrShowDetails:(id)sender {
     BOOL usesBarButtonItem = [sender isKindOfClass:UIBarButtonItem.class];
     if (self.task) {
