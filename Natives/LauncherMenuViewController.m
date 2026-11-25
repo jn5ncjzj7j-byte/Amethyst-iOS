@@ -791,7 +791,7 @@
     cell.textLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
     cell.textLabel.text = @[@"Home", @"Versions", @"Settings"][indexPath.row];
     UIView *selectedBackground = [UIView new];
-    selectedBackground.backgroundColor = [UIColor colorWithRed:72.0/255.0 green:48.0/255.0 blue:112.0/255.0 alpha:0.72];
+    selectedBackground.backgroundColor = [UIColor colorWithRed:64.0/255.0 green:37.0/255.0 blue:112.0/255.0 alpha:1.0];
     cell.selectedBackgroundView = selectedBackground;
     cell.imageView.tintColor = [UIColor colorWithRed:177.0/255.0 green:143.0/255.0 blue:245.0/255.0 alpha:1.0];
     NSArray *symbols = @[@"house.fill", @"square.stack.3d.up.fill", @"slider.horizontal.3"];
