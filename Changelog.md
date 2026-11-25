@@ -1,5 +1,23 @@
 # Angel Aura Amethyst (iOS)
 
+## 1.1 (Development)
+
+### NEXA Launcher Interface
+- Introduced the first NEXA launcher interface while keeping the existing app identity and Minecraft launch systems.
+- Reorganized the main navigation into Home, Versions, and Settings.
+- Added a Home dashboard with Minecraft branding, profile information, and a prominent Play action.
+- Added separate status cards for the selected Minecraft version, Java runtime, renderer, and allocated RAM.
+- Added quick access to Mods, Resource Packs, Shaders, and News & Updates.
+- Added a sidebar footer with the live clock, date, GitHub, Discord, and Changelog shortcuts.
+- Kept the account and profile switcher in the upper-right corner.
+- Applied a dark navy theme with restrained purple accents and a simple glowing orb mark.
+
+### Improvements
+- Improved News content positioning alongside the sidebar.
+- Preserved resource-pack and shader-pack import actions in the navigation.
+- Kept the JIT status toolbar visible alongside the sidebar footer.
+- Improved sidebar navigation state when switching between Home and feature pages.
+
 ## 1.0
 
 You're helping to shape our future while we work to build a release.
