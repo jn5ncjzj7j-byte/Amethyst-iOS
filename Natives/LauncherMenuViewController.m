@@ -338,9 +338,15 @@
     row.axis = UILayoutConstraintAxisHorizontal;
     row.spacing = 10;
     row.distribution = UIStackViewDistributionFillEqually;
-    [row addArrangedSubview:[self metadataCardWithTitle:@"Java" valueLabel:&_runtimeValueLabel symbol:@"cup.and.saucer.fill"]];
-    [row addArrangedSubview:[self metadataCardWithTitle:@"Renderer" valueLabel:&_rendererValueLabel symbol:@"display"]];
-    [row addArrangedSubview:[self metadataCardWithTitle:@"Memory" valueLabel:&_ramValueLabel symbol:@"memorychip"]];
+    UILabel *runtimeValueLabel = nil;
+    UILabel *rendererValueLabel = nil;
+    UILabel *ramValueLabel = nil;
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Java" valueLabel:&runtimeValueLabel symbol:@"cup.and.saucer.fill"]];
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Renderer" valueLabel:&rendererValueLabel symbol:@"display"]];
+    [row addArrangedSubview:[self metadataCardWithTitle:@"Memory" valueLabel:&ramValueLabel symbol:@"memorychip"]];
+    self.runtimeValueLabel = runtimeValueLabel;
+    self.rendererValueLabel = rendererValueLabel;
+    self.ramValueLabel = ramValueLabel;
     [self.contentStack addArrangedSubview:row];
 }
 
