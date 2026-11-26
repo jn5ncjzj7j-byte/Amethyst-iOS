@@ -243,6 +243,11 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         // Setup AME_RENDERER
         NSString *renderer = [PLProfiles resolveKeyForCurrentProfile:@"renderer"];
         gameHasVulkanBackend = versionHasVulkanBackend(launchTarget[@"id"]) || versionHasVulkanBackend(launchTarget[@"inheritsFrom"]);
+        if ([renderer isEqualToString:@"misg-rendered"]) {
+            NSString *selectedBackend = gameHasVulkanBackend ? @RENDERER_NAME_MOLTENVK : @RENDERER_NAME_VK_ZINK;
+            NSLog(@"[Misg Rendered] Selected %@ for %@", selectedBackend, launchTarget[@"id"] ?: launchTarget[@"inheritsFrom"] ?: @"unknown version");
+            renderer = selectedBackend;
+        }
         if (gameHasVulkanBackend && ame_renderer_from_name(renderer.UTF8String) == AME_RENDERER_AUTO) {
             renderer = @RENDERER_NAME_MOLTENVK;
         }

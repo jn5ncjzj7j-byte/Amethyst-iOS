@@ -27,7 +27,10 @@
 #include "renderer_info.h"
 #include "utils.h"
 
+extern unsigned int amethystTakeRenderedFrames(void);
+
 #include <dlfcn.h>
+#include <math.h>
 
 int memorystatus_control(uint32_t command, int32_t pid, uint32_t flags, void *buffer, size_t buffersize);
 #define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT        6
@@ -64,6 +67,27 @@ static GameSurfaceView* pojavWindow;
 
 @end
 
+static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloat borderWidth) {
+    if (!image || borderWidth <= 0.0) return image;
+    UIImage *foreground = image;
+    if (image.renderingMode == UIImageRenderingModeAlwaysTemplate && tintColor) {
+        foreground = [image imageWithTintColor:tintColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    }
+    UIImage *outline = [foreground imageWithTintColor:UIColor.blackColor renderingMode:UIImageRenderingModeAlwaysOriginal];
+    CGFloat scale = foreground.scale > 0.0 ? foreground.scale : UIScreen.mainScreen.scale;
+    CGSize outputSize = CGSizeMake(foreground.size.width + borderWidth * 2.0, foreground.size.height + borderWidth * 2.0);
+    UIGraphicsBeginImageContextWithOptions(outputSize, NO, scale);
+    for (NSInteger x = -1; x <= 1; x++) {
+        for (NSInteger y = -1; y <= 1; y++) {
+            if (x == 0 && y == 0) continue;
+            [outline drawAtPoint:CGPointMake(borderWidth + x * borderWidth, borderWidth + y * borderWidth)];
+        }
+    }
+    [foreground drawAtPoint:CGPointMake(borderWidth, borderWidth)];
+    UIImage *result = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return [result imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+}
 @implementation SurfaceViewController
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata {
@@ -94,14 +118,19 @@ static GameSurfaceView* pojavWindow;
 }
 
 - (UIImage *)minecraftCrosshairImage {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(16, 16), NO, 1.0);
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(24, 24), NO, 1.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
-    CGContextFillRect(context, CGRectMake(4, 0, 8, 16));
-    CGContextFillRect(context, CGRectMake(0, 4, 16, 8));
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat cornerRadius = MIN(4.0, MAX(0.0, radiusPreference ? [radiusPreference doubleValue] : 2.0));
+    if (cornerRadius > 0.0) {
+        CGFloat outlineRadius = MIN(5.0, cornerRadius + 1.0);
+        CGContextSetFillColorWithColor(context, UIColor.blackColor.CGColor);
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(9, 1, 6, 22) cornerRadius:outlineRadius] fill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(1, 9, 22, 6) cornerRadius:outlineRadius] fill];
+    }
     CGContextSetFillColorWithColor(context, [self virtualMouseTintColor].CGColor);
-    CGContextFillRect(context, CGRectMake(6, 0, 4, 16));
-    CGContextFillRect(context, CGRectMake(0, 6, 16, 4));
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(10, 2, 4, 20) cornerRadius:cornerRadius] fill];
+    [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(2, 10, 20, 4) cornerRadius:cornerRadius] fill];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return image;
@@ -133,10 +162,17 @@ static GameSurfaceView* pojavWindow;
     return UIColor.whiteColor;
 }
 
+- (void)updateVirtualMouseVisibility {
+    self.mousePointerView.hidden = !virtualMouseEnabled || isGrabbing == JNI_TRUE;
+}
+
 - (void)updateVirtualMouseAppearance {
     NSString *style = getPrefObject(@"control.mouse_cursor_style");
+    id radiusPreference = getPrefObject(@"control.mouse_cursor_corner_radius");
+    CGFloat outlineWidth = radiusPreference && [radiusPreference doubleValue] > 0.0 ? 1.0 : 0.0;
     if (!style.length || [style isEqualToString:@"minecraft"]) {
-        self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
+        UIImage *cursor = [UIImage imageNamed:@"MousePointer"];
+        self.mousePointerView.image = AMOutlinedCursorImage(cursor, nil, outlineWidth);
         self.mousePointerView.tintColor = nil;
         self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
         return;
@@ -159,7 +195,7 @@ static GameSurfaceView* pojavWindow;
         NSString *imagePath = getPrefObject(@"control.mouse_cursor_image");
         UIImage *customImage = imagePath.length ? [UIImage imageWithContentsOfFile:imagePath] : nil;
         if (customImage) {
-            self.mousePointerView.image = customImage;
+            self.mousePointerView.image = AMOutlinedCursorImage(customImage, nil, outlineWidth);
             self.mousePointerView.tintColor = nil;
             self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
             return;
@@ -167,9 +203,12 @@ static GameSurfaceView* pojavWindow;
     }
 
     UIColor *tint = [self virtualMouseTintColor];
-
-    self.mousePointerView.image = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    self.mousePointerView.tintColor = tint;
+    UIImage *cursor = [[UIImage systemImageNamed:symbol] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    if (![shape isEqualToString:@"crosshair"]) {
+        cursor = AMOutlinedCursorImage(cursor, tint, outlineWidth);
+    }
+    self.mousePointerView.image = cursor;
+    self.mousePointerView.tintColor = nil;
     self.mousePointerView.contentMode = UIViewContentModeScaleAspectFit;
 }
 
@@ -198,6 +237,26 @@ static GameSurfaceView* pojavWindow;
     id tickInput = ^{
         [GyroInput tick];
         [ControllerInput tick];
+        static CFTimeInterval lastFPSUpdate = 0;
+        static NSUInteger accumulatedFrames = 0;
+        accumulatedFrames += amethystTakeRenderedFrames();
+        CFTimeInterval now = CACurrentMediaTime();
+        if (lastFPSUpdate == 0) lastFPSUpdate = now;
+        else if (now - lastFPSUpdate >= 1.0) {
+            NSInteger fps = (NSInteger)round((double)accumulatedFrames / (now - lastFPSUpdate));
+            for (UIView *view in self.ctrlView.subviews) {
+                if (![view isKindOfClass:ControlButton.class]) continue;
+                ControlButton *button = (ControlButton *)view;
+                BOOL isFPSButton = NO;
+                for (NSNumber *keycode in button.properties[@"keycodes"]) if (keycode.intValue == SPECIALBTN_FPS) isFPSButton = YES;
+                if (isFPSButton) {
+                    button.properties[@"fpsValue"] = @(fps);
+                    [button update];
+                }
+            }
+            accumulatedFrames = 0;
+            lastFPSUpdate = now;
+        }
     };
     CADisplayLink *displayLink = [CADisplayLink displayLinkWithTarget:tickInput selector:@selector(invoke)];
     if (@available(iOS 15.0, tvOS 15.0, *)) {
@@ -285,10 +344,10 @@ static GameSurfaceView* pojavWindow;
     virtualMouseFrame = CGRectMake(self.view.frame.size.width / 2, self.view.frame.size.height / 2, 18, 27);
     self.mousePointerView = [[UIImageView alloc] initWithFrame:virtualMouseFrame];
     self.mousePointerView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin |UIViewAutoresizingFlexibleBottomMargin;
-    self.mousePointerView.hidden = !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
     self.mousePointerView.image = [UIImage imageNamed:@"MousePointer"];
     self.mousePointerView.userInteractionEnabled = NO;
-    [self.touchView addSubview:self.mousePointerView];
+    [self.view addSubview:self.mousePointerView];
     [self updateVirtualMouseAppearance];
 
     self.inputTextField = [[TrackedTextField alloc] initWithFrame:CGRectMake(0, -32.0, self.view.frame.size.width, 30.0)];
@@ -314,7 +373,7 @@ static GameSurfaceView* pojavWindow;
         NSLog(@"Input: Mouse connected!");
         GCMouse* mouse = note.object;
         [self registerMouseCallbacks:mouse];
-        self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+        [self updateVirtualMouseVisibility];
         [self setNeedsUpdateOfPrefersPointerLocked];
     }];
     self.mouseDisconnectCallback = [[NSNotificationCenter defaultCenter] addObserverForName:GCMouseDidDisconnectNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
@@ -341,8 +400,8 @@ static GameSurfaceView* pojavWindow;
         GCController* controller = note.object;
         [ControllerInput initKeycodeTable];
         [ControllerInput registerControllerCallbacks:controller];
-        self.mousePointerView.hidden = isGrabbing;
         virtualMouseEnabled = YES;
+        [self updateVirtualMouseVisibility];
         if (getPrefBool(@"control.hardware_hide")) {
             self.ctrlView.hidden = YES;
         }
@@ -431,7 +490,7 @@ static GameSurfaceView* pojavWindow;
     self.mouseSpeed = getPrefFloat(@"control.mouse_speed") / 100.0;
 
     virtualMouseEnabled = getPrefBool(@"control.virtmouse_enable");
-    self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
 
     // Update virtual mouse scale
     CGFloat mouseScale = getPrefFloat(@"control.mouse_scale") / 100.0;
@@ -551,7 +610,7 @@ static GameSurfaceView* pojavWindow;
         self.mousePointerView.frame = virtualMouseFrame;
     }
     self.scrollPanGesture.enabled = !isGrabbing;
-    self.mousePointerView.hidden = isGrabbing || !virtualMouseEnabled;
+    [self updateVirtualMouseVisibility];
     [self setNeedsUpdateOfPrefersPointerLocked];
 
     // Update buttons visibility
@@ -595,7 +654,7 @@ static GameSurfaceView* pojavWindow;
 
         [button addTarget:self action:@selector(executebtn_down:) forControlEvents:UIControlEventTouchDown];
         [button addTarget:self action:@selector(executebtn_up_inside:) forControlEvents:UIControlEventTouchUpInside];
-        [button addTarget:self action:@selector(executebtn_up_outside:) forControlEvents:UIControlEventTouchUpOutside];
+        [button addTarget:self action:@selector(executebtn_up_outside:) forControlEvents:UIControlEventTouchUpOutside | UIControlEventTouchCancel];
 
         if (isSwipeable) {
             UIPanGestureRecognizer *panRecognizerButton = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(executebtn_swipe:)];
@@ -649,6 +708,16 @@ static GameSurfaceView* pojavWindow;
 
 - (BOOL)isTouchInactive:(UITouch *)touch {
     return touch == nil || touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled;
+}
+
+- (void)moveVirtualMouseByDeltaX:(CGFloat)deltaX deltaY:(CGFloat)deltaY {
+    if (!virtualMouseEnabled) return;
+    virtualMouseFrame.origin.x += deltaX * self.mouseSpeed;
+    virtualMouseFrame.origin.y += deltaY * self.mouseSpeed;
+    CGPoint hotspot = [self virtualMouseHotspotOffset];
+    virtualMouseFrame.origin.x = clamp(virtualMouseFrame.origin.x, 0, MAX(0, self.surfaceView.frame.size.width - hotspot.x));
+    virtualMouseFrame.origin.y = clamp(virtualMouseFrame.origin.y, 0, MAX(0, self.surfaceView.frame.size.height - hotspot.y));
+    self.mousePointerView.frame = virtualMouseFrame;
 }
 
 - (void)sendTouchPoint:(CGPoint)location withEvent:(int)event
@@ -798,16 +867,27 @@ static GameSurfaceView* pojavWindow;
 }
 
 - (BOOL)prefersPointerLocked {
-    return GCMouse.mice.count > 0 && (isGrabbing || virtualMouseEnabled);
+    return GCMouse.mice.count > 0 && isGrabbing == JNI_TRUE;
 }
 
 - (void)registerMouseCallbacks:(GCMouse *)mouse {
     NSLog(@"Input: Got mouse %@", mouse);
     mouse.mouseInput.mouseMovedHandler = ^(GCMouseInput * _Nonnull mouse, float deltaX, float deltaY) {
-        if (!self.view.window.windowScene.pointerLockState.locked) {
+        if (!isGrabbing && !virtualMouseEnabled) {
             return;
         }
-        [self sendTouchPoint:CGPointMake(deltaX, -deltaY) withEvent:ACTION_MOVE_MOTION];
+        CGPoint delta = CGPointMake(deltaX, -deltaY);
+        void (^handleMovement)(void) = ^{
+            if (isGrabbing && virtualMouseEnabled) {
+                [self moveVirtualMouseByDeltaX:delta.x deltaY:delta.y];
+            }
+            [self sendTouchPoint:delta withEvent:ACTION_MOVE_MOTION];
+        };
+        if (NSThread.isMainThread) {
+            handleMovement();
+        } else {
+            dispatch_async(dispatch_get_main_queue(), handleMovement);
+        }
     };
 
     mouse.mouseInput.leftButton.pressedChangedHandler = ^(GCControllerButtonInput * _Nonnull button, float value, BOOL pressed) {
@@ -1016,15 +1096,17 @@ static GameSurfaceView* pojavWindow;
                     break;
 
                 case SPECIALBTN_SCROLLUP:
-                    if (!held) {
-                        CallbackBridge_nativeSendScroll(0.0, -1.0);
-                    }
+                    if (!held) CallbackBridge_nativeSendScroll(0.0, -1.0);
+                    break;
+
+                case SPECIALBTN_SCROLLCONTROL:
+                case SPECIALBTN_FPS:
                     break;
 
                 case SPECIALBTN_VIRTUALMOUSE:
                     if (!isGrabbing && !held) {
                         virtualMouseEnabled = !virtualMouseEnabled;
-                        self.mousePointerView.hidden = !virtualMouseEnabled;
+                        [self updateVirtualMouseVisibility];
                         setPrefBool(@"control.virtmouse_enable", virtualMouseEnabled);
                         [self setNeedsUpdateOfPrefersPointerLocked];
                     }
@@ -1114,6 +1196,11 @@ static GameSurfaceView* pojavWindow;
 
 - (void)executebtn_up_outside:(ControlButton *)sender {
     [self executebtn_up:sender isOutside:YES];
+}
+
+- (void)sendControlScrollDelta:(CGFloat)delta reverse:(BOOL)reverse {
+    CGFloat scroll = delta / 24.0;
+    CallbackBridge_nativeSendScroll(0.0, reverse ? -scroll : scroll);
 }
 
 - (void)executebtn_special_togglebtn:(int)held {

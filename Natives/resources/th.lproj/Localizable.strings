@@ -454,3 +454,5 @@
 "preference.title.import_content" = "นำเข้า";
 
 "preference.title.import_launcher_config" = "นำเข้าข้อมูลสำรอง Launcher";
+"preference.title.mouse_cursor_corner_radius" = "ความโค้งมนของเส้นขอบเคอร์เซอร์";
+"preference.detail.mouse_cursor_corner_radius" = "ปรับความโค้งมนของเส้นขอบเคอร์เซอร์แบบกำหนดเอง";

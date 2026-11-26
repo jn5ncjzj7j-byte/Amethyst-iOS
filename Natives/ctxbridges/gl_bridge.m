@@ -11,6 +11,8 @@
 #include "renderer_info.h"
 #include "utils.h"
 
+extern void amethystRecordRenderedFrame(void);
+
 static EGLDisplay g_EglDisplay;
 static egl_library handle;
 
@@ -203,7 +205,9 @@ void gl_swap_buffers() {
     // submission) is never called from the background.
     pojavWaitForAppForeground();
     if (!currentBundle) return;
-    if (!handle.eglSwapBuffers(g_EglDisplay, currentBundle->gl.surface) && handle.eglGetError() == EGL_BAD_SURFACE) {
+    if (handle.eglSwapBuffers(g_EglDisplay, currentBundle->gl.surface)) {
+        amethystRecordRenderedFrame();
+    } else if (handle.eglGetError() == EGL_BAD_SURFACE) {
         NSLog(@"eglSwapBuffers error 0x%x", handle.eglGetError());
         //stopSwapBuffers = true;
         //closeGLFWWindow();

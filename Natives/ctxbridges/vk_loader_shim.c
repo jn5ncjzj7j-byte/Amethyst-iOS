@@ -8,6 +8,7 @@
 #define VK_EXPORT __attribute__((visibility("default")))
 #define VK_SUCCESS 0
 #define VK_ERROR_INITIALIZATION_FAILED (-3)
+#define VK_SUBOPTIMAL_KHR 1000001003
 
 typedef int32_t VkResult;
 typedef void (*PFN_voidFunction)(void);
@@ -15,6 +16,8 @@ typedef VkResult (*PFN_createInstance)(const void *, const void *, void **);
 typedef VkResult (*PFN_enumerateVersion)(uint32_t *);
 typedef VkResult (*PFN_enumerateExtensions)(const char *, uint32_t *, void *);
 typedef PFN_voidFunction (*PFN_getInstanceProcAddr)(void *, const char *);
+typedef PFN_voidFunction (*PFN_getDeviceProcAddr)(void *, const char *);
+typedef VkResult (*PFN_queuePresent)(void *, const void *);
 
 static pthread_once_t driverOnce = PTHREAD_ONCE_INIT;
 static void *driverLib;
@@ -22,6 +25,33 @@ static PFN_createInstance realCreateInstance;
 static PFN_enumerateVersion realEnumerateVersion;
 static PFN_enumerateExtensions realEnumerateExtensions;
 static PFN_getInstanceProcAddr realGetInstanceProcAddr;
+static PFN_getDeviceProcAddr realGetDeviceProcAddr;
+static PFN_queuePresent realQueuePresent;
+
+typedef void (*PFN_recordRenderedFrame)(void);
+
+static void ensureDriver(void);
+
+static VkResult wrappedQueuePresent(void *queue, const void *presentInfo) {
+    if (!realQueuePresent) return VK_ERROR_INITIALIZATION_FAILED;
+    VkResult result = realQueuePresent(queue, presentInfo);
+    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
+        PFN_recordRenderedFrame recordFrame = (PFN_recordRenderedFrame)dlsym(RTLD_DEFAULT, "amethystRecordRenderedFrame");
+        if (recordFrame) recordFrame();
+    }
+    return result;
+}
+
+VK_EXPORT PFN_voidFunction vkGetDeviceProcAddr(void *device, const char *name) {
+    ensureDriver();
+    if (!realGetDeviceProcAddr) return NULL;
+    PFN_voidFunction fn = realGetDeviceProcAddr(device, name);
+    if (fn && name && !strcmp(name, "vkQueuePresentKHR")) {
+        realQueuePresent = (PFN_queuePresent)(uintptr_t)fn;
+        return (PFN_voidFunction)wrappedQueuePresent;
+    }
+    return fn;
+}
 
 static void *driverSymbol(const char *name) {
     return driverLib ? dlsym(driverLib, name) : NULL;
@@ -61,7 +91,11 @@ static void ensureDriver(void) {
 VK_EXPORT VkResult vkCreateInstance(const void *createInfo, const void *allocator, void **instance) {
     ensureDriver();
     if (!realCreateInstance) return VK_ERROR_INITIALIZATION_FAILED;
-    return realCreateInstance(createInfo, allocator, instance);
+    VkResult result = realCreateInstance(createInfo, allocator, instance);
+    if (result == VK_SUCCESS && instance && *instance && realGetInstanceProcAddr) {
+        realGetDeviceProcAddr = (PFN_getDeviceProcAddr)(uintptr_t)realGetInstanceProcAddr(*instance, "vkGetDeviceProcAddr");
+    }
+    return result;
 }
 
 VK_EXPORT VkResult vkEnumerateInstanceVersion(uint32_t *apiVersion) {
@@ -95,6 +129,12 @@ VK_EXPORT VkResult vkEnumerateDeviceLayerProperties(void *physicalDevice, uint32
 VK_EXPORT PFN_voidFunction vkGetInstanceProcAddr(void *instance, const char *name) {
     ensureDriver();
     if (!name) return NULL;
+    if (!strcmp(name, "vkGetDeviceProcAddr")) {
+        if (realGetInstanceProcAddr) {
+            realGetDeviceProcAddr = (PFN_getDeviceProcAddr)(uintptr_t)realGetInstanceProcAddr(instance, name);
+        }
+        return (PFN_voidFunction)vkGetDeviceProcAddr;
+    }
     if (!strcmp(name, "vkEnumerateInstanceLayerProperties"))
         return (PFN_voidFunction)vkEnumerateInstanceLayerProperties;
     if (!strcmp(name, "vkEnumerateDeviceLayerProperties"))

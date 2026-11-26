@@ -4,6 +4,8 @@
 #import "NSPredicateUtilitiesExternal.h"
 #import "../LauncherPreferences.h"
 #import "../utils.h"
+#import "../SurfaceViewController.h"
+#include <math.h>
 
 #import <objc/runtime.h>
 
@@ -61,15 +63,29 @@
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     [super touchesBegan:touches withEvent:event];
-    if (!isControlModifiable && [self.properties[@"passThruEnabled"] boolValue]) {
-        [currentVC() touchesBegan:touches withEvent:event];
+    if (!isControlModifiable) {
+        for (NSNumber *keycode in self.properties[@"keycodes"]) if (keycode.intValue == SPECIALBTN_SCROLLCONTROL) {
+            self.lastScrollTouchY = [touches.anyObject locationInView:self].y;
+            break;
+        }
+        if ([self.properties[@"passThruEnabled"] boolValue]) [currentVC() touchesBegan:touches withEvent:event];
     }
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     [super touchesMoved:touches withEvent:event];
-    if (!isControlModifiable && [self.properties[@"passThruEnabled"] boolValue]) {
-        [currentVC() touchesMoved:touches withEvent:event];
+    if (!isControlModifiable) {
+        BOOL isScrollControl = NO;
+        for (NSNumber *keycode in self.properties[@"keycodes"]) if (keycode.intValue == SPECIALBTN_SCROLLCONTROL) isScrollControl = YES;
+        if (isScrollControl) for (UITouch *touch in touches) {
+            CGFloat currentY = [touch locationInView:self].y;
+            CGFloat delta = currentY - self.lastScrollTouchY;
+            if (fabs(delta) >= 5.0) {
+                [(SurfaceViewController *)currentVC() sendControlScrollDelta:delta reverse:[self.properties[@"reverseScroll"] boolValue]];
+                self.lastScrollTouchY = currentY;
+            }
+        }
+        if ([self.properties[@"passThruEnabled"] boolValue]) [currentVC() touchesMoved:touches withEvent:event];
     }
 }
 
@@ -202,7 +218,15 @@
     self.layer.borderWidth = propStrokeWidth;
 
     [UIView performWithoutAnimation:^{
-        [self setTitle:self.properties[@"name"] forState:UIControlStateNormal];
+        BOOL isFPSButton = NO;
+        for (NSNumber *keycode in self.properties[@"keycodes"]) if (keycode.intValue == SPECIALBTN_FPS) isFPSButton = YES;
+        if (isFPSButton) {
+            NSString *format = self.properties[@"fpsFormat"] ?: @"FPS: %d";
+            NSString *fpsValue = [self.properties[@"fpsValue"] stringValue] ?: @"0";
+            [self setTitle:[format stringByReplacingOccurrencesOfString:@"%d" withString:fpsValue] forState:UIControlStateNormal];
+        } else {
+            [self setTitle:self.properties[@"name"] forState:UIControlStateNormal];
+        }
         [self layoutIfNeeded];
     }];
 }

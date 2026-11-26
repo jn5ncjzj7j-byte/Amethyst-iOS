@@ -19,6 +19,7 @@ void *hooked_dlopen_26_ppl(const char *path, int mode);
 void (*orig_abort)();
 void (*orig_exit)(int code);
 void* (*orig_dlopen)(const char* path, int mode);
+void* (*orig_dlsym)(void* handle, const char* name);
 int (*orig_open)(const char *path, int oflag, ...);
 
 void handle_fatal_exit(int code) {
@@ -237,12 +238,19 @@ int hooked_open(const char *path, int oflag, ...) {
     return orig_open(path, oflag, mode);
 }
 
+
+
+void* hooked_dlsym(void* handle, const char* name) {
+    return orig_dlsym ? orig_dlsym(handle, name) : NULL;
+}
+
 void init_hookFunctions() {
     struct rebinding rebindings[] = (struct rebinding[]){
         {"abort", hooked_abort, (void *)&orig_abort},
         {"__assert_rtn", hooked___assert_rtn, NULL},
         {"exit", hooked_exit, (void *)&orig_exit},
         {"dlopen", hooked_dlopen, (void *)&orig_dlopen},
+        {"dlsym", hooked_dlsym, (void *)&orig_dlsym},
         {"open", hooked_open, (void *)&orig_open}
     };
     rebind_symbols(rebindings, sizeof(rebindings)/sizeof(struct rebinding));
