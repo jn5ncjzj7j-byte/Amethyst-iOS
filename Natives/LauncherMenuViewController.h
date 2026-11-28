@@ -10,6 +10,7 @@
 @end
 
 @interface LauncherHomeViewController : UIViewController
+- (void)refreshProfileInformation;
 @end
 
 @interface LauncherMenuViewController : UITableViewController
