@@ -790,12 +790,21 @@
         selected.action();
         return;
     }
+    if (selected.vcArray.count == 0) return;
+    UIViewController *destination = selected.vcArray.firstObject;
+    BOOL alreadyShowingDestination = contentNavigationController.topViewController == destination;
+    if (!self.isInitialVc && index == self.activeOptionIndex && alreadyShowingDestination) {
+        contentNavigationController.toolbarHidden = index != 1;
+        return;
+    }
     if (self.isInitialVc) {
         self.isInitialVc = NO;
-    } else {
+    } else if (self.activeOptionIndex < self.options.count) {
         self.options[self.activeOptionIndex].vcArray = contentNavigationController.viewControllers;
     }
-    [contentNavigationController setViewControllers:selected.vcArray animated:NO];
+    if (!alreadyShowingDestination) {
+        [contentNavigationController setViewControllers:selected.vcArray animated:NO];
+    }
     self.activeOptionIndex = index;
     if (index < 3) self.lastSelectedIndex = (int)index;
     contentNavigationController.toolbarHidden = index != 1;
