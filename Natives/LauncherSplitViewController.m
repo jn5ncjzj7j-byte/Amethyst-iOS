@@ -31,9 +31,7 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 }
 @interface LauncherSplitViewController ()<UISplitViewControllerDelegate, UIPointerInteractionDelegate>{
 }
-@property(nonatomic) CGSize lastAppliedLayoutSize;
-@property(nonatomic) BOOL lastAppliedHideSidebar;
-@property(nonatomic) BOOL hasAppliedLayout;
+@property(nonatomic) BOOL hasConfiguredInitialLayout;
 @end
 
 @implementation LauncherSplitViewController
@@ -86,11 +84,9 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     detailVc.toolbarHidden = NO;
 
     self.viewControllers = @[masterVc, detailVc];
-    [self changeDisplayModeForSize:self.view.frame.size];
-
-    self.minimumPrimaryColumnWidth = 236;
-    self.maximumPrimaryColumnWidth = 320;
-    self.preferredPrimaryColumnWidth = 270;
+    self.minimumPrimaryColumnWidth = 250;
+    self.maximumPrimaryColumnWidth = 330;
+    self.preferredPrimaryColumnWidth = 290;
     self.launcherMousePointerView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 22, 22)];
     self.launcherMousePointerView.userInteractionEnabled = NO;
     self.launcherMousePointerView.hidden = YES;
@@ -113,19 +109,16 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     return [UIPointerStyle hiddenPointerStyle];
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    if (!self.hasConfiguredInitialLayout) {
+        self.hasConfiguredInitialLayout = YES;
+        [self applyLayoutForSize:self.view.bounds.size initial:YES];
+    }
+}
+
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-    CGSize size = self.view.bounds.size;
-    BOOL hideSidebar = getPrefBool(@"general.hidden_sidebar");
-    if (size.width > 0 && size.height > 0 &&
-        (!self.hasAppliedLayout ||
-         !CGSizeEqualToSize(size, self.lastAppliedLayoutSize) ||
-         hideSidebar != self.lastAppliedHideSidebar)) {
-        self.hasAppliedLayout = YES;
-        self.lastAppliedLayoutSize = size;
-        self.lastAppliedHideSidebar = hideSidebar;
-        [self changeDisplayModeForSize:size];
-    }
     [self.view bringSubviewToFront:self.launcherMousePointerView];
 }
 
@@ -199,25 +192,35 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.launcherMousePointerView.tintColor = nil;
 }
 
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
-{
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    [self changeDisplayModeForSize:size];
+    [coordinator animateAlongsideTransition:nil completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self applyLayoutForSize:size initial:NO];
+    }];
 }
 
-- (void)changeDisplayModeForSize:(CGSize)size {
+- (void)applyLayoutForSize:(CGSize)size initial:(BOOL)initial {
+    if (size.width <= 0 || size.height <= 0) return;
     BOOL isPortrait = size.height > size.width;
     BOOL hideSidebar = getPrefBool(@"general.hidden_sidebar");
-    if (hideSidebar) {
-        self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
-    } else {
-        self.preferredDisplayMode = isPortrait ?
-            UISplitViewControllerDisplayModeOneOverSecondary :
-            UISplitViewControllerDisplayModeOneBesideSecondary;
-    }
-    self.preferredSplitBehavior = isPortrait ?
+    UISplitViewControllerSplitBehavior behavior = isPortrait ?
         UISplitViewControllerSplitBehaviorOverlay :
         UISplitViewControllerSplitBehaviorTile;
+    if (self.preferredSplitBehavior != behavior) {
+        self.preferredSplitBehavior = behavior;
+    }
+    if (hideSidebar) {
+        if (self.preferredDisplayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
+            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
+        }
+    } else if (initial) {
+        UISplitViewControllerDisplayMode mode = isPortrait ?
+            UISplitViewControllerDisplayModeOneOverSecondary :
+            UISplitViewControllerDisplayModeOneBesideSecondary;
+        if (self.preferredDisplayMode != mode) {
+            self.preferredDisplayMode = mode;
+        }
+    }
 }
 
 - (void)dismissViewController {
