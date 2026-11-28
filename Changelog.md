@@ -12,6 +12,14 @@
 - Refined the sidebar orb, account control, and icon-only footer shortcuts.
 - Return to the Home layout after confirming a version selection.
 
+### Stability and Layout Fixes
+- Corrected the iPad split layout so the sidebar no longer covers the Home dashboard.
+- Prevented repeated account refresh and queued layout work during navigation.
+- Stabilized version-picker presentation and guarded empty or invalid profile rows.
+- Fixed account switcher sizing and text clipping.
+- Restored the NEXA header mark when the sidebar is collapsed.
+- Standardized touch handling for the redesigned launcher controls.
+
 ## 1.1 (Development)
 
 ### NEXA Launcher Interface
