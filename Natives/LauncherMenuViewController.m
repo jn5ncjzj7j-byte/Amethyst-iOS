@@ -50,6 +50,7 @@
 @property(nonatomic) UILabel *ramValueLabel;
 @property(nonatomic) UIStackView *contentStack;
 @property(nonatomic) UIButton *versionButton;
+@property(nonatomic) UIView *brandHeaderView;
 @end
 
 @implementation LauncherHomeViewController
@@ -90,6 +91,20 @@
     self.view.backgroundColor = [self nexaColorRed:5 green:6 blue:16];
     self.navigationItem.title = @"";
     self.navigationItem.rightBarButtonItem = [sidebarViewController drawAccountButton];
+    self.brandHeaderView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 112, 36)];
+    UIView *headerOrb = [[UIView alloc] initWithFrame:CGRectMake(0, 6, 24, 24)];
+    headerOrb.backgroundColor = [self nexaColorRed:10 green:10 blue:28];
+    headerOrb.layer.cornerRadius = 12;
+    headerOrb.layer.borderWidth = 1.5;
+    headerOrb.layer.borderColor = [self nexaColorRed:171 green:126 blue:255].CGColor;
+    headerOrb.layer.shadowColor = [self nexaColorRed:129 green:89 blue:255].CGColor;
+    headerOrb.layer.shadowOpacity = 0.9;
+    headerOrb.layer.shadowRadius = 10;
+    UILabel *headerName = [self labelWithText:@"NEXA" size:18 weight:UIFontWeightBold color:UIColor.whiteColor];
+    headerName.frame = CGRectMake(34, 0, 78, 36);
+    headerName.attributedText = [[NSAttributedString alloc] initWithString:@"NEXA" attributes:@{NSKernAttributeName:@2}];
+    [self.brandHeaderView addSubview:headerOrb];
+    [self.brandHeaderView addSubview:headerName];
 
     UIScrollView *scrollView = [UIScrollView new];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -464,6 +479,15 @@
     self.runtimeValueLabel.text = runtime;
     self.rendererValueLabel.text = renderer;
     self.ramValueLabel.text = ram;
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    BOOL sidebarHidden = self.splitViewController.displayMode == UISplitViewControllerDisplayModeSecondaryOnly;
+    UIView *desiredTitleView = sidebarHidden ? self.brandHeaderView : nil;
+    if (self.navigationItem.titleView != desiredTitleView) {
+        self.navigationItem.titleView = desiredTitleView;
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
