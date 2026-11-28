@@ -85,7 +85,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     self.buttonInstall.tintColor = UIColor.whiteColor;
     self.buttonInstall.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
     self.buttonInstall.enabled = NO;
-    [self.buttonInstall addTarget:self action:@selector(performInstallOrShowDetails:) forControlEvents:UIControlEventPrimaryActionTriggered];
+    [self.buttonInstall addTarget:self action:@selector(performInstallOrShowDetails:) forControlEvents:UIControlEventTouchUpInside];
     [targetToolbar addSubview:self.progressViewMain];
     [targetToolbar addSubview:self.versionTextField];
     [targetToolbar addSubview:self.buttonInstall];
@@ -477,11 +477,14 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 
 #pragma mark - UIPickerView stuff
 - (void)pickerView:(PLPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component {
-    self.profileSelectedAt = row;
-    //((UIImageView *)self.versionTextField.leftView).image = [pickerView imageAtRow:row column:component];
+    NSInteger count = [self pickerView:pickerView numberOfRowsInComponent:component];
+    if (row < 0 || row >= count) return;
+    self.profileSelectedAt = (int)row;
     ((UIImageView *)self.versionTextField.leftView).image = [pickerView imageAtRow:row column:component];
     self.versionTextField.text = [self pickerView:pickerView titleForRow:row forComponent:component];
-    PLProfiles.current.selectedProfileName = self.versionTextField.text;
+    if (self.versionTextField.text.length > 0) {
+        PLProfiles.current.selectedProfileName = self.versionTextField.text;
+    }
 }
 
 - (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
