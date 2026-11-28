@@ -84,9 +84,9 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     detailVc.toolbarHidden = NO;
 
     self.viewControllers = @[masterVc, detailVc];
-    self.minimumPrimaryColumnWidth = 250;
-    self.maximumPrimaryColumnWidth = 330;
-    self.preferredPrimaryColumnWidth = 290;
+    self.minimumPrimaryColumnWidth = 220;
+    self.maximumPrimaryColumnWidth = 280;
+    self.preferredPrimaryColumnWidth = 250;
     self.launcherMousePointerView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 22, 22)];
     self.launcherMousePointerView.userInteractionEnabled = NO;
     self.launcherMousePointerView.hidden = YES;
