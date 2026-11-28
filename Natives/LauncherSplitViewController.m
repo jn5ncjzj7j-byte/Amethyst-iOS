@@ -31,6 +31,9 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 }
 @interface LauncherSplitViewController ()<UISplitViewControllerDelegate, UIPointerInteractionDelegate>{
 }
+@property(nonatomic) CGSize lastAppliedLayoutSize;
+@property(nonatomic) BOOL lastAppliedHideSidebar;
+@property(nonatomic) BOOL hasAppliedLayout;
 @end
 
 @implementation LauncherSplitViewController
@@ -113,7 +116,14 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     CGSize size = self.view.bounds.size;
-    if (size.width > 0 && size.height > 0) {
+    BOOL hideSidebar = getPrefBool(@"general.hidden_sidebar");
+    if (size.width > 0 && size.height > 0 &&
+        (!self.hasAppliedLayout ||
+         !CGSizeEqualToSize(size, self.lastAppliedLayoutSize) ||
+         hideSidebar != self.lastAppliedHideSidebar)) {
+        self.hasAppliedLayout = YES;
+        self.lastAppliedLayoutSize = size;
+        self.lastAppliedHideSidebar = hideSidebar;
         [self changeDisplayModeForSize:size];
     }
     [self.view bringSubviewToFront:self.launcherMousePointerView];
