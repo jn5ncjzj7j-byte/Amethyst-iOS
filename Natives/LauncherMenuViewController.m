@@ -670,7 +670,7 @@
 - (UIBarButtonItem *)drawAccountButton {
     if (!self.accountBtnItem) {
         self.accountButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.accountButton addTarget:self action:@selector(selectAccount:) forControlEvents:UIControlEventPrimaryActionTriggered];
+        [self.accountButton addTarget:self action:@selector(selectAccount:) forControlEvents:UIControlEventTouchUpInside];
         self.accountButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
         self.accountButton.backgroundColor = [UIColor colorWithRed:17.0/255.0 green:16.0/255.0 blue:34.0/255.0 alpha:1.0];
         self.accountButton.layer.cornerRadius = 15;
@@ -849,7 +849,7 @@
         [self updateAccountInfo];
         if (sender != self.accountButton) {
             // Called from the play button, so call back to continue
-            [sender sendActionsForControlEvents:UIControlEventPrimaryActionTriggered];
+            [sender sendActionsForControlEvents:UIControlEventTouchUpInside];
         }
     };
     vc.modalPresentationStyle = UIModalPresentationPopover;
@@ -865,14 +865,9 @@
 
 - (void)updateAccountInfo {
     NSDictionary *selected = BaseAuthenticator.current.authData;
-    CGSize size = CGSizeMake(contentNavigationController.view.frame.size.width, contentNavigationController.view.frame.size.height);
-    
+
     if (selected == nil) {
-        if((size.width / 3) > 200) {
-            [self.accountButton setAttributedTitle:[[NSAttributedString alloc] initWithString:localize(@"login.option.select", nil)] forState:UIControlStateNormal];
-        } else {
-            [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
-        }
+        [self.accountButton setAttributedTitle:[[NSAttributedString alloc] initWithString:localize(@"login.option.select", nil)] forState:UIControlStateNormal];
         [self.accountButton setImage:[UIImage imageNamed:@"DefaultAccount"] forState:UIControlStateNormal];
         self.accountButton.frame = CGRectMake(0, 0, 250, 52);
         return;
@@ -905,11 +900,7 @@
     [title appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n" attributes:nil]];
     [title appendAttributedString:subtitle];
     
-    if((size.width / 3) > 200) {
-        [self.accountButton setAttributedTitle:title forState:UIControlStateNormal];
-    } else {
-        [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
-    }
+    [self.accountButton setAttributedTitle:title forState:UIControlStateNormal];
     
     // TODO: Add caching mechanism for profile pictures
     NSURL *url = [NSURL URLWithString:[selected[@"profilePicURL"] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"]];
