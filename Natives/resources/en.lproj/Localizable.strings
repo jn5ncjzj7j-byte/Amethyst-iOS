@@ -519,3 +519,12 @@
 "preference.title.import_launcher_config" = "Import launcher backup";
 "preference.title.mouse_cursor_corner_radius" = "Cursor outline roundness";
 "preference.detail.mouse_cursor_corner_radius" = "Adjust how rounded the custom cursor outline looks.";
+
+"launcher.menu.changelog" = "Changelog";
+
+"content.installed.search" = "Search installed packs";
+"content.installed.refresh" = "Refresh installed packs";
+"content.installed.item" = "Installed in the selected profile";
+"content.installed.empty" = "No installed packs match this search";
+"content.installed.remove" = "Remove pack";
+"content.installed.remove_confirm" = "Remove %@ from this profile?";

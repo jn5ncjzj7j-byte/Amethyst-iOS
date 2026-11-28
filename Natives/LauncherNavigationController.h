@@ -9,6 +9,8 @@ NSMutableArray<NSDictionary *> *localVersionList, *remoteVersionList;
 
 - (void)enterModInstallerWithPath:(NSString *)path hitEnterAfterWindowShown:(BOOL)hitEnter;
 - (void)fetchLocalVersionList;
+- (void)showVersionPicker;
+- (void)launchSelectedVersionFromHome:(UIButton *)sender;
 - (void)setInteractionEnabled:(BOOL)enable forDownloading:(BOOL)downloading;
 
 @end

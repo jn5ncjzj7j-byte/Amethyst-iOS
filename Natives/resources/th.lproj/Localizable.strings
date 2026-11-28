@@ -456,3 +456,12 @@
 "preference.title.import_launcher_config" = "นำเข้าข้อมูลสำรอง Launcher";
 "preference.title.mouse_cursor_corner_radius" = "ความโค้งมนของเส้นขอบเคอร์เซอร์";
 "preference.detail.mouse_cursor_corner_radius" = "ปรับความโค้งมนของเส้นขอบเคอร์เซอร์แบบกำหนดเอง";
+
+"launcher.menu.changelog" = "บันทึกการเปลี่ยนแปลง";
+
+"content.installed.search" = "ค้นหาแพ็กที่ติดตั้งแล้ว";
+"content.installed.refresh" = "รีเฟรชรายการแพ็กที่ติดตั้ง";
+"content.installed.item" = "ติดตั้งอยู่ในโปรไฟล์ที่เลือก";
+"content.installed.empty" = "ไม่พบแพ็กที่ติดตั้งซึ่งตรงกับการค้นหานี้";
+"content.installed.remove" = "ลบแพ็ก";
+"content.installed.remove_confirm" = "ต้องการลบ %@ ออกจากโปรไฟล์นี้หรือไม่?";

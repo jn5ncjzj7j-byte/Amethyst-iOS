@@ -9,6 +9,10 @@
 @property(nonatomic) NSArray<UIViewController *> *vcArray;
 @end
 
+@interface LauncherHomeViewController : UIViewController
+- (void)refreshProfileInformation;
+@end
+
 @interface LauncherMenuViewController : UITableViewController
 
 @property NSString* listPath;
@@ -17,6 +21,7 @@
 @property(nonatomic) BOOL isInitialVc;
 
 - (void)restoreHighlightedSelection;
+- (void)openOptionAtIndex:(NSUInteger)index;
 - (void)selectAccount:(UIButton *)sender;
 - (void)updateAccountInfo;
 - (UIBarButtonItem *)drawAccountButton;

@@ -31,13 +31,46 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 }
 @interface LauncherSplitViewController ()<UISplitViewControllerDelegate, UIPointerInteractionDelegate>{
 }
+@property(nonatomic) BOOL hasConfiguredInitialLayout;
 @end
 
 @implementation LauncherSplitViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = UIColor.systemBackgroundColor;
+    self.view.backgroundColor = [UIColor colorWithRed:5.0/255.0 green:6.0/255.0 blue:16.0/255.0 alpha:1.0];
+    self.overrideUserInterfaceStyle = UIUserInterfaceStyleDark;
+
+    UINavigationBarAppearance *navigationAppearance = [UINavigationBarAppearance new];
+    navigationAppearance.backgroundEffect = nil;
+    navigationAppearance.backgroundColor = [UIColor colorWithRed:7.0/255.0 green:8.0/255.0 blue:19.0/255.0 alpha:1.0];
+    navigationAppearance.shadowColor = [UIColor colorWithRed:48.0/255.0 green:37.0/255.0 blue:79.0/255.0 alpha:1.0];
+    navigationAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.whiteColor};
+    navigationAppearance.largeTitleTextAttributes = @{NSForegroundColorAttributeName: UIColor.whiteColor};
+    UINavigationBar *navigationBar = UINavigationBar.appearance;
+    navigationBar.standardAppearance = navigationAppearance;
+    navigationBar.scrollEdgeAppearance = navigationAppearance;
+    navigationBar.compactAppearance = navigationAppearance;
+    navigationBar.translucent = NO;
+    navigationBar.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
+
+    UIToolbarAppearance *toolbarAppearance = [UIToolbarAppearance new];
+    toolbarAppearance.backgroundEffect = nil;
+    toolbarAppearance.backgroundColor = [UIColor colorWithRed:7.0/255.0 green:8.0/255.0 blue:19.0/255.0 alpha:1.0];
+    toolbarAppearance.shadowColor = [UIColor colorWithRed:48.0/255.0 green:37.0/255.0 blue:79.0/255.0 alpha:1.0];
+    UIToolbar *toolbar = UIToolbar.appearance;
+    toolbar.standardAppearance = toolbarAppearance;
+    toolbar.compactAppearance = toolbarAppearance;
+    toolbar.scrollEdgeAppearance = toolbarAppearance;
+    toolbar.translucent = NO;
+    toolbar.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
+
+    UITableView *tableAppearance = UITableView.appearance;
+    tableAppearance.backgroundColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    tableAppearance.separatorColor = [UIColor colorWithRed:43.0/255.0 green:37.0/255.0 blue:65.0/255.0 alpha:1.0];
+    UITableViewCell.appearance.backgroundColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    UISearchBar.appearance.barTintColor = [UIColor colorWithRed:8.0/255.0 green:9.0/255.0 blue:21.0/255.0 alpha:1.0];
+    UISearchBar.appearance.tintColor = [UIColor colorWithRed:190.0/255.0 green:145.0/255.0 blue:255.0/255.0 alpha:1.0];
     if ([getPrefObject(@"control.control_safe_area") length] == 0) {
         setPrefObject(@"control.control_safe_area", NSStringFromUIEdgeInsets(getDefaultSafeArea()));
     }
@@ -51,9 +84,9 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     detailVc.toolbarHidden = NO;
 
     self.viewControllers = @[masterVc, detailVc];
-    [self changeDisplayModeForSize:self.view.frame.size];
-
-    self.maximumPrimaryColumnWidth = self.view.bounds.size.width * 0.95;
+    self.minimumPrimaryColumnWidth = 220;
+    self.maximumPrimaryColumnWidth = 280;
+    self.preferredPrimaryColumnWidth = 250;
     self.launcherMousePointerView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 22, 22)];
     self.launcherMousePointerView.userInteractionEnabled = NO;
     self.launcherMousePointerView.hidden = YES;
@@ -76,14 +109,13 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     return [UIPointerStyle hiddenPointerStyle];
 }
 
-- (void)splitViewController:(UISplitViewController *)svc willChangeToDisplayMode:(UISplitViewControllerDisplayMode)displayMode {
-    if (self.preferredDisplayMode != displayMode && self.displayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
-        });
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    if (!self.hasConfiguredInitialLayout) {
+        self.hasConfiguredInitialLayout = YES;
+        [self applyLayoutForSize:self.view.bounds.size initial:YES];
     }
 }
-
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
@@ -160,26 +192,35 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
     self.launcherMousePointerView.tintColor = nil;
 }
 
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
-{
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    [self changeDisplayModeForSize:size];
+    [coordinator animateAlongsideTransition:nil completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self applyLayoutForSize:size initial:NO];
+    }];
 }
 
-- (void)changeDisplayModeForSize:(CGSize)size {
+- (void)applyLayoutForSize:(CGSize)size initial:(BOOL)initial {
+    if (size.width <= 0 || size.height <= 0) return;
     BOOL isPortrait = size.height > size.width;
-    if (self.preferredDisplayMode == 0 || self.displayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
-        if(!getPrefBool(@"general.hidden_sidebar")) {
-            self.preferredDisplayMode = isPortrait ?
-                UISplitViewControllerDisplayModeOneOverSecondary :
-                UISplitViewControllerDisplayModeOneBesideSecondary;
-        } else {
-            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
-        }
-    }
-    self.preferredSplitBehavior = isPortrait ?
+    BOOL hideSidebar = getPrefBool(@"general.hidden_sidebar");
+    UISplitViewControllerSplitBehavior behavior = isPortrait ?
         UISplitViewControllerSplitBehaviorOverlay :
         UISplitViewControllerSplitBehaviorTile;
+    if (self.preferredSplitBehavior != behavior) {
+        self.preferredSplitBehavior = behavior;
+    }
+    if (hideSidebar) {
+        if (self.preferredDisplayMode != UISplitViewControllerDisplayModeSecondaryOnly) {
+            self.preferredDisplayMode = UISplitViewControllerDisplayModeSecondaryOnly;
+        }
+    } else if (initial) {
+        UISplitViewControllerDisplayMode mode = isPortrait ?
+            UISplitViewControllerDisplayModeOneOverSecondary :
+            UISplitViewControllerDisplayModeOneBesideSecondary;
+        if (self.preferredDisplayMode != mode) {
+            self.preferredDisplayMode = mode;
+        }
+    }
 }
 
 - (void)dismissViewController {
