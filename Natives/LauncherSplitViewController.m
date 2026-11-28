@@ -112,6 +112,10 @@ static UIImage *AMOutlinedCursorImage(UIImage *image, UIColor *tintColor, CGFloa
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
+    CGSize size = self.view.bounds.size;
+    if (size.width > 0 && size.height > 0) {
+        [self changeDisplayModeForSize:size];
+    }
     [self.view bringSubviewToFront:self.launcherMousePointerView];
 }
 
