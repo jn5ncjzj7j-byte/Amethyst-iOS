@@ -181,9 +181,9 @@
     planetShade.frame = CGRectMake(0, 0, 300, 300);
     planetShade.cornerRadius = 150;
     planetShade.colors = @[
-        (id)[self nexaColorRed:94 green:117 blue:188].CGColor,
-        (id)[self nexaColorRed:35 green:39 blue:84].CGColor,
-        (id)[self nexaColorRed:7 green:8 blue:24].CGColor
+        (id)[self nexaColorRed:36 green:47 blue:88].CGColor,
+        (id)[self nexaColorRed:13 green:15 blue:39].CGColor,
+        (id)[self nexaColorRed:3 green:4 blue:16].CGColor
     ];
     planetShade.startPoint = CGPointMake(0.35, 0);
     planetShade.endPoint = CGPointMake(0.68, 1);
@@ -193,11 +193,13 @@
     horizon.translatesAutoresizingMaskIntoConstraints = NO;
     CAGradientLayer *horizonGlow = [CAGradientLayer layer];
     horizonGlow.colors = @[
-        (id)[UIColor colorWithRed:0.31 green:0.19 blue:0.75 alpha:0.0].CGColor,
-        (id)[UIColor colorWithRed:0.62 green:0.34 blue:1.0 alpha:0.72].CGColor,
-        (id)[UIColor colorWithRed:0.86 green:0.55 blue:1.0 alpha:0.0].CGColor
+        (id)[UIColor colorWithRed:0.28 green:0.18 blue:0.72 alpha:0.0].CGColor,
+        (id)[UIColor colorWithRed:0.55 green:0.34 blue:0.94 alpha:0.28].CGColor,
+        (id)[UIColor colorWithRed:0.88 green:0.68 blue:1.0 alpha:0.52].CGColor,
+        (id)[UIColor colorWithRed:0.34 green:0.22 blue:0.76 alpha:0.0].CGColor
     ];
-    horizonGlow.frame = CGRectMake(0, 0, 1200, 34);
+    horizonGlow.locations = @[@0.0, @0.38, @0.52, @1.0];
+    horizonGlow.frame = CGRectMake(0, 0, 1200, 52);
     horizonGlow.startPoint = CGPointMake(0, 0.5);
     horizonGlow.endPoint = CGPointMake(1, 0.5);
     [horizon.layer addSublayer:horizonGlow];
@@ -211,7 +213,7 @@
         [horizon.leadingAnchor constraintEqualToAnchor:hero.leadingAnchor],
         [horizon.trailingAnchor constraintEqualToAnchor:hero.trailingAnchor],
         [horizon.bottomAnchor constraintEqualToAnchor:hero.bottomAnchor constant:-42],
-        [horizon.heightAnchor constraintEqualToConstant:34]
+        [horizon.heightAnchor constraintEqualToConstant:52]
     ]];
     [hero bringSubviewToFront:horizon];
 
