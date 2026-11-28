@@ -385,10 +385,13 @@
         [detail.trailingAnchor constraintLessThanOrEqualToAnchor:button.trailingAnchor constant:-8]
     ]];
     [button.heightAnchor constraintEqualToConstant:94].active = YES;
-    [button addAction:[UIAction actionWithHandler:^(__kindof UIAction *action) {
-        [sidebarViewController openOptionAtIndex:index];
-    }] forControlEvents:UIControlEventPrimaryActionTriggered];
+    button.tag = index;
+    [button addTarget:self action:@selector(featureCardTapped:) forControlEvents:UIControlEventTouchUpInside];
     return button;
+}
+
+- (void)featureCardTapped:(UIButton *)sender {
+    [sidebarViewController openOptionAtIndex:sender.tag];
 }
 
 - (void)buildFeatureSection {
@@ -681,7 +684,11 @@
         self.accountButton.imageView.clipsToBounds = YES;
         self.accountButton.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
         self.accountButton.titleLabel.textColor = UIColor.whiteColor;
-        self.accountButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        self.accountButton.titleLabel.numberOfLines = 2;
+        self.accountButton.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        self.accountButton.titleLabel.adjustsFontSizeToFitWidth = YES;
+        self.accountButton.titleLabel.minimumScaleFactor = 0.82;
+        self.accountButton.frame = CGRectMake(0, 0, 250, 52);
         self.accountBtnItem = [[UIBarButtonItem alloc] initWithCustomView:self.accountButton];
     }
 
@@ -867,7 +874,7 @@
             [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
         }
         [self.accountButton setImage:[UIImage imageNamed:@"DefaultAccount"] forState:UIControlStateNormal];
-        [self.accountButton sizeToFit];
+        self.accountButton.frame = CGRectMake(0, 0, 250, 52);
         return;
     }
 
@@ -909,7 +916,7 @@
     UIImage *placeholder = [UIImage imageNamed:@"DefaultAccount"];
     [self.accountButton setImageForState:UIControlStateNormal withURL:url placeholderImage:placeholder];
     [self.accountButton.imageView setImageWithURL:url placeholderImage:placeholder];
-    [self.accountButton sizeToFit];
+    self.accountButton.frame = CGRectMake(0, 0, 250, 52);
 
     // Update profiles and local version list if needed
     if (shouldUpdateProfiles) {
