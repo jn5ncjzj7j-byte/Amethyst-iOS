@@ -530,6 +530,16 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     if (self.globalToolbarItems && !self.viewControllers.firstObject.toolbarItems) {
         self.viewControllers.firstObject.toolbarItems = self.globalToolbarItems;
     }
+    CGFloat toolbarWidth = self.toolbar.bounds.size.width;
+    CGFloat toolbarHeight = self.toolbar.bounds.size.height;
+    if (toolbarWidth > 0 && toolbarHeight > 0) {
+        CGFloat playWidth = MIN(124, MAX(88, toolbarWidth * 0.2));
+        CGFloat controlHeight = MAX(34, toolbarHeight - 10);
+        self.versionTextField.frame = CGRectMake(8, 5, MAX(160, toolbarWidth - playWidth - 24), controlHeight);
+        self.buttonInstall.frame = CGRectMake(toolbarWidth - playWidth - 8, 5, playWidth, controlHeight);
+        self.progressText.frame = self.versionTextField.frame;
+        self.progressViewMain.frame = CGRectMake(0, 0, toolbarWidth, 2);
+    }
 }
 
 @end
