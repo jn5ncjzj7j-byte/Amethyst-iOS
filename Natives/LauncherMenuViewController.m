@@ -51,6 +51,10 @@
 @property(nonatomic) UIStackView *contentStack;
 @property(nonatomic) UIButton *versionButton;
 @property(nonatomic) UIView *brandHeaderView;
+@property(nonatomic) UIView *heroView;
+@property(nonatomic) CAGradientLayer *heroSkyLayer;
+@property(nonatomic) CAGradientLayer *heroHorizonLayer;
+@property(nonatomic) NSMutableArray<UIView *> *heroStars;
 @end
 
 @implementation LauncherHomeViewController
@@ -147,7 +151,8 @@
     hero.clipsToBounds = YES;
 
     CAGradientLayer *sky = [CAGradientLayer layer];
-    sky.frame = CGRectMake(0, 0, 1200, 270);
+    self.heroSkyLayer = sky;
+    sky.frame = hero.bounds;
     sky.colors = @[
         (id)[self nexaColorRed:3 green:5 blue:17].CGColor,
         (id)[self nexaColorRed:18 green:14 blue:46].CGColor,
@@ -156,14 +161,16 @@
     sky.locations = @[@0.0, @0.65, @1.0];
     [hero.layer addSublayer:sky];
 
+    self.heroStars = [NSMutableArray arrayWithCapacity:42];
     for (NSUInteger i = 0; i < 42; i++) {
         CGFloat x = (CGFloat)((i * 137 + 29) % 997) / 997.0;
         CGFloat y = (CGFloat)((i * 83 + 17) % 211) / 270.0;
         CGFloat diameter = (i % 7 == 0) ? 2.4 : 1.3;
-        UIView *star = [[UIView alloc] initWithFrame:CGRectMake(x * 1200, y * 270, diameter, diameter)];
+        UIView *star = [[UIView alloc] initWithFrame:CGRectMake(x * CGRectGetWidth(hero.bounds), y * CGRectGetHeight(hero.bounds), diameter, diameter)];
         star.backgroundColor = [UIColor colorWithWhite:1 alpha:(i % 5 == 0) ? 0.95 : 0.55];
         star.layer.cornerRadius = diameter / 2.0;
         [hero addSubview:star];
+        [self.heroStars addObject:star];
     }
 
     UIView *planet = [UIView new];
@@ -199,7 +206,8 @@
         (id)[UIColor colorWithRed:0.34 green:0.22 blue:0.76 alpha:0.0].CGColor
     ];
     horizonGlow.locations = @[@0.0, @0.38, @0.52, @1.0];
-    horizonGlow.frame = CGRectMake(0, 0, 1200, 52);
+    self.heroHorizonLayer = horizonGlow;
+    horizonGlow.frame = CGRectMake(0, 0, CGRectGetWidth(hero.bounds), 52);
     horizonGlow.startPoint = CGPointMake(0, 0.5);
     horizonGlow.endPoint = CGPointMake(1, 0.5);
     [horizon.layer addSublayer:horizonGlow];
@@ -241,6 +249,7 @@
 
 - (void)buildHero {
     UIView *hero = [self makeCosmicHero];
+    self.heroView = hero;
     [self.contentStack addArrangedSubview:hero];
     [hero.heightAnchor constraintEqualToConstant:218].active = YES;
 }
@@ -490,6 +499,17 @@
     if (self.navigationItem.titleView != desiredTitleView) {
         self.navigationItem.titleView = desiredTitleView;
     }
+    CGRect heroBounds = self.heroView.bounds;
+    self.heroSkyLayer.frame = heroBounds;
+    self.heroHorizonLayer.frame = CGRectMake(0, 0, CGRectGetWidth(heroBounds), 52);
+    [self.heroStars enumerateObjectsUsingBlock:^(UIView *star, NSUInteger index, BOOL *stop) {
+        CGFloat x = (CGFloat)((index * 137 + 29) % 997) / 997.0;
+        CGFloat y = (CGFloat)((index * 83 + 17) % 211) / 270.0;
+        CGRect frame = star.frame;
+        frame.origin.x = x * CGRectGetWidth(heroBounds);
+        frame.origin.y = y * CGRectGetHeight(heroBounds);
+        star.frame = frame;
+    }];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
