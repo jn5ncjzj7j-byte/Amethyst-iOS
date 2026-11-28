@@ -300,10 +300,15 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 }
 
 - (void)showVersionPicker {
+    if (!NSThread.isMainThread) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self showVersionPicker];
+        });
+        return;
+    }
     self.toolbarHidden = NO;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self.versionTextField becomeFirstResponder];
-    });
+    [self.view layoutIfNeeded];
+    [self.versionTextField becomeFirstResponder];
 }
 
 - (void)launchSelectedVersionFromHome:(UIButton *)sender {
@@ -499,8 +504,14 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 
 - (void)versionClosePicker {
     [self.versionTextField endEditing:YES];
-    [self pickerView:self.versionPickerView didSelectRow:[self.versionPickerView selectedRowInComponent:0] inComponent:0];
-    if ([self.viewControllers.lastObject isKindOfClass:LauncherHomeViewController.class]) {
+    NSInteger count = [self pickerView:self.versionPickerView numberOfRowsInComponent:0];
+    if (count > 0) {
+        NSInteger selectedRow = MAX(0, MIN([self.versionPickerView selectedRowInComponent:0], count - 1));
+        [self pickerView:self.versionPickerView didSelectRow:selectedRow inComponent:0];
+    }
+    UIViewController *current = self.viewControllers.lastObject;
+    if ([current isKindOfClass:LauncherHomeViewController.class]) {
+        [(LauncherHomeViewController *)current refreshProfileInformation];
         self.toolbarHidden = YES;
     }
 }
@@ -513,15 +524,8 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-    [sidebarViewController updateAccountInfo];
-    if (self.globalToolbarItems) {
-        if (!self.viewControllers.firstObject.toolbarItems) {
-            self.viewControllers.firstObject.toolbarItems = self.globalToolbarItems;
-        }
-        // resize textFieldContainer to fit, need dispatch queue or it freezes for some reason...
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.versionTextField.superview.frame = CGRectMake(0, 0, MIN(self.view.frame.size.width,self.view.frame.size.height)*0.8 - 40, 36);
-        });
+    if (self.globalToolbarItems && !self.viewControllers.firstObject.toolbarItems) {
+        self.viewControllers.firstObject.toolbarItems = self.globalToolbarItems;
     }
 }
 
