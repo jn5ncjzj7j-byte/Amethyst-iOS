@@ -634,7 +634,7 @@
         shortcut.tintColor = [UIColor colorWithRed:202.0/255.0 green:174.0/255.0 blue:255.0/255.0 alpha:1.0];
         shortcut.tag = i;
         shortcut.accessibilityLabel = @[@"GitHub", @"Discord", @"Changelog"][i];
-        [shortcut addTarget:self action:@selector(nexaShortcutTapped:) forControlEvents:UIControlEventPrimaryActionTriggered];
+        [shortcut addTarget:self action:@selector(nexaShortcutTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self.nexaFooterView addSubview:shortcut];
     }
     [self.navigationController.view addSubview:self.nexaFooterView];
